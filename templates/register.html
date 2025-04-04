@@ -1,0 +1,44 @@
+{% extends 'layout.html' %}
+{% block content %} 
+    <!-- Form to register a new account -->
+    <h3><a href="/register">Register</a></h3>
+    <!-- The 'encytype' allows you to send files through the form -->
+    <form method="POST"  enctype="multipart/form-data">
+        <!-- The hidden_tag() function protects against malicious servers using the users information by creating a hidden CSRF token which will only make uploads valid on the trusted website. CSRF: Cross site request forgery -->
+        {{ form.hidden_tag() }}
+
+        {% for field, errors in form.errors.items() %}
+            {% for error in errors %}
+                <p style="color: red">{{ error }}</p>
+            {% endfor %}
+        {% endfor %}
+        
+        <div class="row justify-content-center">
+            <!-- Name input field -->
+            <div class="col-auto">
+                {{ form.name(class="form-control") }}
+            </div>
+
+            <!-- Password input field -->
+            <div class="col-auto">
+                {{ form.password(class="form-control") }}
+            </div>
+
+            <!-- Confirm password input field -->
+            <div class="col-auto">
+                {{ form.confirm_password(class="form-control") }}
+            </div>
+
+            <!-- Profile picture input field -->
+            <div class="col-auto">
+                {{ form.photo(class="form-control") }}
+            </div>
+
+            <!-- Submit button -->
+            <div class="col-auto">
+                {{ form.submit(class="btn btn-success") }}
+            </div>
+        </div>
+
+    </form>
+{% endblock %}
