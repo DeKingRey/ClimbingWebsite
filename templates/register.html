@@ -1,7 +1,7 @@
 {% extends 'layout.html' %}
 {% block content %} 
     <!-- Form to register a new account -->
-    <h3><a href="/register">Register</a></h3>
+    <h3>Register</h3>
     <!-- The 'encytype' allows you to send files through the form -->
     <form method="POST"  enctype="multipart/form-data">
         <!-- The hidden_tag() function protects against malicious servers using the users information by creating a hidden CSRF token which will only make uploads valid on the trusted website. CSRF: Cross site request forgery -->

@@ -2,9 +2,9 @@
 A climbing flask website to aid climbers to find climbs and communicate
 By Miguel Monreal on 27/03/25"""
 
-from flask import Flask, render_template, redirect, url_for, send_from_directory
+from flask import Flask, render_template, redirect, url_for, send_from_directory, request, session
 
-from flask_bcrypt import Bcrypt
+from flask_bcrypt import Bcrypt, check_password_hash
 from flask_uploads import UploadSet, IMAGES, configure_uploads
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
@@ -55,12 +55,31 @@ class RegisterForm(FlaskForm):
 
 @app.route("/")
 def home():
-    return render_template("home.html", header="Home")
+    user_id = session.get("user_id")
+    
+    if user_id is not None:
+        con = sqlite3.connect("climbing.db")
+        cur = con.cursor()
+        cur.execute("SELECT profile_picture, username FROM Account WHERE id = ?", (user_id,))
+        result = cur.fetchone()
+        profile_picture = result[0]
+        username = result[1]
+
+        session["profile_picture"] = profile_picture
+        session["username"] = username
+    else:
+        profile_picture = None
+        username = None
+
+    return render_template("home.html", header="Home", profile_picture=profile_picture, username=username)
 
 
-@app.route("/account")
+@app.route("/account", methods=["GET", "POST"])
 def account():
-    pass
+    if request.method == "POST":
+        logout()
+        return redirect(url_for("home"))
+    return render_template("account.html", header="Account", profile_picture=session.get("profile_picture"), username=session.get("username"))
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -93,7 +112,7 @@ def register():
         con.commit()
         cur.close()
         return redirect(url_for("register"))
-    return render_template("register.html", form=form, header="Register")
+    return render_template("register.html", form=form, header="Register", profile_picture=session.get("profile_picture"), username=session.get("username"))
 
 
 @app.route("/uploads/<filename>")
@@ -104,8 +123,42 @@ def get_file(filename):
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    pass
+    # Sets error to None in case there are no errors
+    error = None
 
+    # Checks if their is a post request
+    if request.method == "POST":
+        # Sets the username and password to the inputted data
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        # Connects to the database
+        con = sqlite3.connect("climbing.db")
+        cur = con.cursor()
+        # Checks if user is in database
+        cur.execute("SELECT id, password FROM Account WHERE username = ?;", (username,))
+        result = cur.fetchone()
+    
+        if result:
+            correct_password = result[1]
+            # Checks if the inputted password matches the stored hashed password
+            if check_password_hash(correct_password, password):
+                # Saves the user's id to the session so it can be used anywhere, though is cleared when they leave the website 
+                session["user_id"] = result[0]
+                # Redirects the user to home
+                return redirect(url_for("home"))
+            else:
+                error = "Password is incorrect."
+        else:
+            error = "Username not found."
+
+    return render_template("login.html", header="Login", error=error, profile_picture=session.get("profile_picture"), username=session.get("username"))
+
+
+def logout():
+    session["user_id"] = None
+    session["profile_picture"] = None
+    session["username"] = None
 
 if __name__ == "__main__":
     app.run(debug=True)
