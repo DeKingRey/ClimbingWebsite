@@ -1,0 +1,30 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <!-- This sets up the div where the map will be displayed -->
+    <div id="map" style="height:600px;"></div>    
+
+    <!-- This is the CSS file for leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""/>
+    <!-- This is the JS file for leaflet -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+
+    <!-- This script will setup the map -->
+    <script>
+        // This sets up a new Leaflet map, and accesses our map div with its id, then it defines its starting point, with the coordinates and zoom.
+        var map = L.map("map").setView([373.2, -.024], 13);
+
+        // This sets up the tile layer which uses a URL template for the tile images, in this case it will be an open street map
+        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            // This sets the maximum zoom you can do for this layer
+            maxZoom: 19,
+            // This is the attribution for open street map
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+    </script>
+
+
+{% endblock %}

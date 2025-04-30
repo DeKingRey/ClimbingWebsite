@@ -2,7 +2,7 @@
 A climbing flask website to aid climbers to find climbs and communicate
 By Miguel Monreal on 27/03/25"""
 
-from flask import Flask, render_template, redirect, url_for, send_from_directory, request, session
+from flask import Flask, render_template, redirect, url_for, send_from_directory, request, session\
 
 from flask_bcrypt import Bcrypt, check_password_hash
 from flask_uploads import UploadSet, IMAGES, configure_uploads
@@ -12,6 +12,7 @@ from wtforms.validators import DataRequired, Length, EqualTo, Optional
 from wtforms import StringField, PasswordField, SubmitField
 
 import sqlite3
+import requests
 
 
 app = Flask(__name__)
@@ -52,6 +53,10 @@ class RegisterForm(FlaskForm):
     # Creates the submit button which will check and validate the inputted data
     submit = SubmitField("Register")
 
+# This is the url which is for the API
+# Currently the API does not work so I will wait through the holidays to see if it continues to be like this
+map_routes_url = "https://climbnz.org.nz/api/routes"
+
 
 @app.route("/")
 def home():
@@ -72,6 +77,18 @@ def home():
         username = None
 
     return render_template("home.html", header="Home", profile_picture=profile_picture, username=username)
+    
+
+# The climbing API I need to use is currently not working so I may need to come up with a workaround to this if it isn't fixed
+@app.route("/map")
+def map():
+    
+    return render_template("map.html", header="Map", profile_picture=session.get("profile_picture"), username=session.get("username"))
+
+
+@app.route("/posts", methods=["GET", "POST"])
+def posts():
+    return render_template("posts.html", header="Posts", profile_picture=session.get("profile_picture"), username=session.get("username"))
 
 
 @app.route("/account", methods=["GET", "POST"])
