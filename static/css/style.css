@@ -1,0 +1,247 @@
+/* Sets the font of all text to roboto*/
+@font-face {
+    font-family: "roboto";
+    src: url("roboto_flex.ttf");
+}
+* {
+    font-family: "roboto";
+}
+
+/* #region Basics */
+    /* Setsup the body, main content, and headers with their margins, colours, and positions */
+    body {
+        margin: 0;
+        font-size: 30px;
+        background-color: #fbfbf5;
+    }
+
+    main {
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+
+    header {
+        font-size: 75px;
+        text-align: center;
+        background-color: #feed9f;
+    }
+/*#endregion*/
+
+
+/* #region Navbar */
+    /* Setsup the navbar appearance and makes it a flexbox which holds all the navbar list elements which have stylised links and react when hovered over. */
+    .navbar{
+        background-color: #f7d327;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 75px;
+    }
+    .navbar ul {
+        display: flex;
+        justify-content: flex-start;
+        align-items: stretch;
+        
+        list-style-type: none;
+        padding: 0;
+        margin-left: 20px;
+        margin-top: 0;
+        margin-bottom: 0;
+        overflow: hidden;
+        height: 100%;
+    }
+    .navbar li {
+        height: 100%;
+        display: flex;
+        align-items: stretch;
+    }
+    .navbar a {
+        color: #504c41;
+        text-decoration: none;
+        padding: 0 15px;
+        text-align: center;
+
+        font-size: 40px;
+        height: 100%;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .navbar a:hover {
+        background-color: #e3c116;
+        cursor: pointer;
+    }
+/*#endregion*/
+
+
+/* #region Profile */
+    /* Setsup the profile picture appearance, making it a circle and having a placeholder */
+    .profile-link {
+        margin-right: 20px;
+    }
+    .profile {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .profile-picture, .profile-placeholder {
+        border-radius: 50%; /* Makes the image a circle */
+        border: 3px solid #ccc; /* Adds a border to the image */
+
+        /* Makes the image a square */
+        width: 60px;
+        height: 60px;
+
+        object-fit: cover;
+    }
+    .profile-placeholder {
+        background-color: #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #666;
+    }
+/* #endregion */
+
+
+/* #region Popup */
+/* Styles the popup and its button which is a gradient bean shape, the popup has a fade in transition and also has the functionality for whether its open or not. Then styles the content within the popup. */
+button {
+    background-image: linear-gradient(to right, #D0A823, #F7D327);
+    border-radius: 20px;
+    border: 0;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    color: #FBFBF5;
+    cursor: pointer;
+    padding: 10px 25px;
+}
+
+button:active {
+    opacity: 0.8;
+}
+
+.popup {
+    background-color: rgba(0, 0, 0, 0.3);
+    opacity: 0;
+
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    transition: all 0.3s ease-in-out;
+    z-index: -1;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.popup.open {
+    opacity: 1;
+    z-index: 999;
+}
+
+.popup-inner {
+    background-color: #FBFBF5;
+    border-radius: 5px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    padding: 15px 25px;
+    text-align: center;
+    width: 380px;
+}
+
+.popup-inner h2 {
+    margin: 0;
+}
+
+.popup-inner p, form {
+    line-height: 24px;
+    margin: 10px 0;
+}
+/* #endregion */
+
+
+/* Map display */
+.map {
+    height: 600px;
+    width: 50%;
+}
+
+/* #region Dropdown*/
+/* Styles a dropdown and its content, specifically for a multiselect form field. */
+.dropdown {
+    position: relative; 
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: white;
+    min-width: 160px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.dropdown-content label {
+    display: block;
+}
+/* #endregion*/
+
+/* #region Search Bar */
+
+
+.location-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    max-width: 400px;
+}
+
+#location_input {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+.suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    border: 1px solid #ccc;
+    border-bottom: none;
+    border-top: none;
+    background: white;
+
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%;
+    z-index: 1000;
+} /* Styles the suggestions list */
+
+.suggestions li {
+    padding: 5px;
+    cursor: pointer;
+    font-size: 20px;
+} /* Styles suggestion list elements*/
+
+.suggestions li:hover {
+    background-color: #f0f0f0;
+}
+

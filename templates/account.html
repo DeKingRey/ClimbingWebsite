@@ -3,9 +3,9 @@
     {% if username %}
         <form action="/account" method="POST">
             <button type="submit">Logout</button>
-        </form>
+        </form>     <!-- If username is given(aka the user is logged in) the logout button will display on the account page. -->
     {% else %}
-        <h3>You are not logged in. <a href="/login">Log in here</a> Or <a href="/register">Register here</a>  if you don't have an account.</h3>
+        <h3>You are not logged in. <a href="/login">Log in here</a> Or <a href="/register">Register here</a>  if you don't have an account.</h3>     <!-- Otherwise provides the login and register pages. -->
     {% endif %}
 
 {% endblock %}

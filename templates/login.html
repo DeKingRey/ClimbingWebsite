@@ -10,10 +10,10 @@
         <input type="password" id="password" name="password" required>
 
         <button type="submit">Login</button>
-    </form>
+    </form> <!-- Creates a log in form, with the username and password. -->
 
     {% if error %}
         <p style="color: red">{{ error }}</p>
-    {% endif %}
+    {% endif %} <!-- If they fail it will display what went wrong. -->
 
 {% endblock %}

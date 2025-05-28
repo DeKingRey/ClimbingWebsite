@@ -1,0 +1,8 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <h1>{{info[0]}}</h1> <!-- The routes name. -->
+    <p>Type: {% for i in info[1] %} {{i}} {% endfor %}<br> <!-- Goes through all the types in the route array and displays them. -->
+        Grade: {{info[2]}} <br>
+        Bolts: {{info[3]}} <br>
+        Location: {{info[4]}}</p>
+{% endblock %} <!-- Shows all info for the given route. -->

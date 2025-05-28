@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Climbing - {{ title }}</title>
-    <link rel="stylesheet" href="\static\style.css">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <header>{{ header }}</header>
@@ -16,7 +16,7 @@
             {% if not username %}
                 <li><a href="/register">Register</a></li>
                 <li><a href="/login">Login</a></li>
-            {% endif %}
+            {% endif %} <!-- Sets up the navbar for every page, and adds the register and login elements to the navbar if the user is not logged in -->
         </ul>
         <a href="/account" class="profile-link">
             <div class="profile">
@@ -25,10 +25,10 @@
                 {% else %}
                     <div class="profile-placeholder">?</div>
                 {% endif %}
-            </div>
+            </div>  <!-- Displays the profile picture and links to the account page, though sets the image to a placeholder if it is not given. This is a part of the navbar. -->
         </a>
     </nav>
     <main>{% block content %}{% endblock %}</main>
-    <footer>&copy;Miguel Monreal 2025</footer>
+    <footer>&copy;Miguel Monreal 2025</footer> <!-- Sets my footer. -->
 </body>
 </html>

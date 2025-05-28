@@ -1,0 +1,48 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <h1>{{info[0][0]}}</h1> <!-- This is the locations name -->
+    {% if info[1] %}
+        <h2>Routes: </h2>
+        {% for route in info[1] %}
+            <a href="/map/{{info[0][1]}}/{{info[1][route][1]}}?id={{route}}">{{info[1][route][0]}}</a><br><br>
+        {% endfor %} <!-- Goes through all the given routes in the dictionary, and sets the link to map/location-name/route-name?route_id, then the display of the link is the routes name. -->
+    {% endif %}
+
+    <button data-popup-target="route-popup">Add Route</button> <!-- This button has a custom data field which is used by JS to know what popup it is trying to access-->
+
+    <div class="popup" id="route-popup"> <!-- Popup Div-->
+        <div class="popup-inner"> <!-- Popup Content -->
+            <h2>Add Route</h2>
+            <form action="{{ url_for('add_route') }}" method="POST"> <!-- This is the form to add a route, with the route name, grade, amount of bolts, location, and types. -->
+                <label for="name">Route Name: </label>
+                <input type="text" id="name" name="name" required> <br><br>
+
+                <label for="grade">Grade: </label>
+                <input type="text" id="grade" name="grade" required> <br><br>
+
+                <label for="bolts">Amount of Bolts: </label>
+                <input type="text" name="bolts" id="bolts"> <br><br>
+                
+                <input type="hidden" name="location" id="location" value="{{info[0][0]}}"> <!-- Uses the current location instead of a manual input-->
+
+                <input type="hidden" name="url" id="url" value="{{ request.full_path }}"> <!-- Gets the current url route-->
+
+                <label for="types">Types: </label>
+                <div class="dropdown">
+                    <button type="button">Select Types</button>
+                    <div class="dropdown-content">
+                        {% for type in types %}
+                            <label><input type="checkbox" name="types[]" value="{{type[0]}}">{{type[1]}}</label>
+                        {% endfor %}
+                    </div> <!-- Types goes through all given types and adds them to the multiselect dropdown. -->
+                </div>
+                <br><br>
+
+                <button type="submit">Submit</button>
+            </form>
+            <button data-popup-close>Close</button>
+        </div> 
+    </div><br><br>
+    <script src="/static/js/popup.js"></script>
+
+{% endblock %}
