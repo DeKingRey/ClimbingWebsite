@@ -2,6 +2,15 @@
 A climbing flask website to aid climbers to find climbs and communicate
 By Miguel Monreal on 27/03/25"""
 
+import sqlite3
+import requests
+import os 
+import instructor
+from openai import OpenAI
+from dotenv import load_dotenv
+load_dotenv()
+
+
 from flask import Flask, render_template, redirect, url_for, send_from_directory, request, session
 
 from flask_bcrypt import Bcrypt, check_password_hash
@@ -15,13 +24,12 @@ from slugify import slugify
 
 from banned_words import BANNED_WORDS
 
-import sqlite3
-import requests
+from atomic_agents.agents.base_agent import  BaseAgent, BaseAgentConfig, BaseAgentInputSchema
 
 
 app = Flask(__name__)
 # This secret key is required for Flask-WTF to protect against CSRF attacks
-app.config["SECRET_KEY"] = "&^V*&OEB*@P(#DNUOE)"
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 # This sets the destination for uploaded photos to the 'uploads' folder 
 app.config["UPLOADED_PHOTOS_DEST"] = "uploads"
 
@@ -62,6 +70,8 @@ class RegisterForm(FlaskForm):
 # This is the url which is for the API
 # Currently the API does not work so I will wait through the holidays to see if it continues to be like this
 map_routes_url = "https://climbnz.org.nz/api/routes"
+
+# AI Stuff
 
 
 @app.route("/")
@@ -267,6 +277,11 @@ def add_location():
     return redirect(url_for("map"))
 
 
+def log_route():
+    print("hi")
+    return
+
+
 @app.route("/posts", methods=["GET", "POST"])
 def posts():
     return render_template("posts.html", header="Posts", profile_picture=session.get("profile_picture"), username=session.get("username"))
@@ -309,7 +324,7 @@ def register():
         cur.execute("INSERT INTO Account (username, password, profile_picture) VALUES (?, ?, ?)", (name, hashed_password, file_url))
         con.commit()
         cur.close()
-        return redirect(url_for("register"))
+        return redirect(url_for("login"))
     return render_template("register.html", form=form, header="Register", profile_picture=session.get("profile_picture"), username=session.get("username"))
 
 
