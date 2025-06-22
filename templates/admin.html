@@ -1,0 +1,65 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <h1>Pending Submissions</h1>
+    <div class="divider"></div>
+
+    <h2>Pending Locations</h2>
+    {% if locations %}
+        <div class="pending-submissions">
+            {% for location in locations %}
+                <div class="pending-header">
+                    <h4>{{location[1]}}</h4> <!-- Location name -->
+                    <button class="toggle-button" onclick="toggleInfo(this)">></button>
+                </div> <!-- Div for the header of the which has the button to see more info on the route-->
+
+                <div class="extra-info">
+                    <p>Coordinates: <a href="https://www.google.com/maps?q={{location[2]}}" target="blank">Google maps coordinates</a></p> <!-- A link leading to the coordinates which opens google maps on a new tab -->
+                    <p>Setting: {{location[3]}}</p>
+                    <p>Image:</p>
+                    <div class="location-image-container" style="margin-bottom:20px;">
+                        <img src="{{location[4]}}" alt="location-image" class="location-image">
+                    </div>
+                    <form action="{{ url_for('process_submissions') }} " method="POST" style="display: inline;">
+                        <input type="hidden" name="id" value="{{ location[0] }}"> <!-- The id of the route/location -->
+                        <input type="hidden" name="type" value="Location"> <!-- The type of submission it is so flask can identify what to submit -->
+                        <button type="submit" name="action" value="approve" class="approve-button">Approve</button>
+                        <button type="submit" name="action" value="deny" class="deny-button">Deny</button>
+                    </form> <!-- This form handles denying and approving submissions-->
+                </div> <!-- Displays the information on the route and allows the admin to approve it or not-->
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No pending locations</p>
+    {% endif %}
+
+
+    <h2>Pending Routes</h2>
+    {% if routes %}
+        <div class="pending-submissions">
+            {% for route in routes %}
+                <div class="pending-header">
+                    <h4>{{route[1]}}</h4> <!-- Route name -->
+                    <button class="toggle-button" onclick="toggleInfo(this)">></button>
+                </div> <!-- Div for the header of the which has the button to see more info on the route-->
+
+                <div class="extra-info">
+                    <p>Location: {{route[2]}}</p>
+                    <p>Type: {{route[3]}}</p>
+                    <p>Grade: {{route[4]}}</p>
+                    <p>Bolts: {{route[5]}}</p>
+
+                    <form action="{{ url_for('process_submissions') }} " method="POST" style="display: inline;">
+                        <input type="hidden" name="id" value="{{ route[0] }}"> <!-- The id of the route/location -->
+                        <input type="hidden" name="type" value="Route"> <!-- The type of submission it is so flask can identify what to submit -->
+                        <button type="submit" name="action" value="approve" class="approve-button">Approve</button>
+                        <button type="submit" name="action" value="deny" class="deny-button">Deny</button>
+                    </form> <!-- This form handles denying and approving submissions-->
+                </div> <!-- Displays the information on the route and allows the admin to approve it or not-->
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No pending routes</p>
+    {% endif %}
+
+    <script src="/static/js/toggle.js"></script>
+{% endblock %}

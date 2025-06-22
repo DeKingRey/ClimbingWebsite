@@ -58,7 +58,7 @@ class RegisterForm(FlaskForm):
     photo = FileField(
         validators= [
             # Only allows the file types in the 'photos' upload set
-            FileAllowed(photos, "Only images allowed"),
+            FileAllowed(photos, "Invalid file type"),
             # Is optional so the field can be empty and other errors will be ignored
             Optional()
         ]
@@ -71,7 +71,14 @@ class RegisterForm(FlaskForm):
 # Currently the API does not work so I will wait through the holidays to see if it continues to be like this
 map_routes_url = "https://climbnz.org.nz/api/routes"
 
-# AI Stuff
+
+@app.context_processor
+def inject_user():
+    return {
+        "username": session.get("username"),
+        "profile_picture": session.get("profile_picture"),
+        "permission_level": session.get("permission_level"),
+    }
 
 
 @app.route("/")
@@ -81,18 +88,21 @@ def home():
     if user_id is not None:
         con = sqlite3.connect("climbing.db")
         cur = con.cursor()
-        cur.execute("SELECT profile_picture, username FROM Account WHERE id = ?", (user_id,))
+        cur.execute("SELECT profile_picture, username, permission_level FROM Account WHERE id = ?", (user_id,))
         result = cur.fetchone()
         profile_picture = result[0]
         username = result[1]
+        permission_level = result[2]
 
         session["profile_picture"] = profile_picture
         session["username"] = username
+        session["permission_level"] = permission_level
     else:
         profile_picture = None
         username = None
+        admin = 0
 
-    return render_template("home.html", header="Home", profile_picture=profile_picture, username=username)
+    return render_template("home.html", header="Home")
     
 
 # The climbing API I need to use is currently not working so I may need to come up with a workaround to this if it isn't fixed
@@ -104,7 +114,9 @@ def map():
     locations = get_locations()
     settings = get_settings()
 
-    return render_template("map.html", header="Map", markers=markers, types=types, locations=locations, settings=settings, profile_picture=session.get("profile_picture"), username=session.get("username"))
+    print(locations)
+
+    return render_template("map.html", header="Map", markers=markers, types=types, locations=locations, settings=settings)
 
 
 def get_map_info():
@@ -112,7 +124,7 @@ def get_map_info():
     cur = con.cursor()
 
     # Gets the info which will be used for the markers
-    cur.execute("SELECT id, name, coordinates FROM Location")
+    cur.execute("SELECT id, name, coordinates FROM Location WHERE pending = 0;")
     results = cur.fetchall()
 
     # Sets markers as an empty dictionary
@@ -140,7 +152,7 @@ def get_locations():
     con = sqlite3.connect("climbing.db")
     cur = con.cursor()
 
-    cur.execute("SELECT name FROM Location;")
+    cur.execute("SELECT name FROM Location WHERE pending = 0;")
     results = cur.fetchall()
 
     locations = []
@@ -169,18 +181,19 @@ def map_location(name):
     cur = con.cursor()
 
     # Executes a query to join the Route_Type bridging table, and uses the current routes id
-    cur.execute("""SELECT Location.name, Route.id, Route.name FROM Location
+    cur.execute("""SELECT Location.name, Route.id, Route.name, Location.image FROM Location
                 JOIN Route ON Route.location_id = Location.id
-                WHERE Location.id = ?;""", (id,))
+                WHERE Location.id = ? AND Route.pending = 0;""", (id,))
     
     results = cur.fetchall()
-    if results == []:
-        cur.execute("SELECT name, id FROM Location WHERE id = ?;", (id,))
+    if results == []: # If there are no routes only get location info
+        cur.execute("SELECT name, id, image FROM Location WHERE id = ?;", (id,))
         info = cur.fetchall()
     else:
         location = results[0][0]
+        image = results[0][3]
         # Makes a list with the location name, and then a dicitionary with the routes within it
-        info = [[location, slugify(location)], {}]
+        info = [[location, slugify(location), image], {}]
 
         for result in results:
             route_id = result[1]
@@ -188,7 +201,7 @@ def map_location(name):
             # Sets the key to the route id, and then the value is a list with the name and slugified name
             info[1][route_id] = [route_name, slugify(route_name)]
 
-    return render_template("location.html", header="Map", info=info, types=types, profile_picture=session.get("profile_picture"), username=session.get("username"))
+    return render_template("location.html", header="Map", info=info, types=types)
 
 
 @app.route("/map/<string:location>/<string:name>")
@@ -200,7 +213,7 @@ def map_route(location, name):
     id = request.args.get("id")
 
     # Executes a query to join the Route_Type bridging table, and uses the current routes id
-    cur.execute("""SELECT Route.name, Type.name, grade, bolts, Location.name 
+    cur.execute("""SELECT Route.name, Type.name, grade, bolts, Location.name, Route.id
                 FROM Route
                 JOIN Route_Type ON Route.id = Route_Type.route_id
                 JOIN Type ON Type.id = Route_Type.type_id
@@ -212,7 +225,6 @@ def map_route(location, name):
     # Adds all the base info to the info list
     info = []
     for result in results[0]:
-        print(results)
         info.append(result)
     
     # Sets an empty list inside info, and then takes all the types across all rows of results, to append those to the list within the list
@@ -220,13 +232,12 @@ def map_route(location, name):
     for type in results:
         info[1].append(type[1])
 
-    return render_template("route.html", header="Map", info=info, profile_picture=session.get("profile_picture"), username=session.get("username"))
+    return render_template("route.html", header="Map", info=info)
 
 
 @app.route("/map/add-route", methods=["GET", "POST"])
 def add_route():
     current_url = request.form.get("url")
-
     con = sqlite3.connect("climbing.db")
     cur = con.cursor()
 
@@ -244,7 +255,7 @@ def add_route():
     print(types)
 
     # Will insert the values into the databse, first it uses the field names to define the columns, and then uses the length of fields to find the amount of '?'s, and uses values list as the values
-    cur.execute(f"INSERT INTO Route ({', '.join(fields)}, location_id) VALUES({', '.join('?' * len(fields))}, ?)", values + [location_id])
+    cur.execute(f"INSERT INTO Route ({', '.join(fields)}, location_id, pending) VALUES({', '.join('?' * len(fields))}, ?, 1)", values + [location_id])
     con.commit()
 
     # Gets the new routes id
@@ -268,8 +279,10 @@ def add_location():
     name = request.form.get("name")
     coordinates = f"{request.form.get('lat')} {request.form.get('lon')}"
     setting_id = request.form.get("setting")
+    filename = photos.save(request.files["image"])
+    file_url = url_for("get_file", filename=filename)
 
-    cur.execute("INSERT INTO Location (name, coordinates, setting_id) VALUES(?, ?, ?)", (name, coordinates, setting_id,))
+    cur.execute("INSERT INTO Location (name, coordinates, setting_id, image, pending) VALUES(?, ?, ?, ?, 1)", (name, coordinates, setting_id, file_url,))
     
     con.commit()
     con.close()
@@ -277,14 +290,83 @@ def add_location():
     return redirect(url_for("map"))
 
 
+@app.route("/log-route", methods=["GET", "POST"])
 def log_route():
-    print("hi")
-    return
+    current_url = request.form.get("url")
+    user_id = session.get("user_id")
+    route_id = request.form.get("route_id")
+    rating = request.form.get("rating")
+    date = request.form.get("local_date")
+
+    con = sqlite3.connect("climbing.db")
+    cur = con.cursor()
+
+    cur.execute("INSERT INTO Account_Route (account_id, route_id, rating, date) VALUES (?, ?, ?, ?)", (user_id, route_id, rating, date,))
+
+    con.commit()
+    con.close()
+
+    return redirect(current_url)
+
 
 
 @app.route("/posts", methods=["GET", "POST"])
 def posts():
-    return render_template("posts.html", header="Posts", profile_picture=session.get("profile_picture"), username=session.get("username"))
+    return render_template("posts.html", header="Posts")
+
+
+@app.route("/admin")
+def admin():
+    con = sqlite3.connect("climbing.db")
+    cur = con.cursor()
+
+    cur.execute("""SELECT Route.id, Route.name, Location.name, GROUP_CONCAT(Type.name, ', '), Route.grade, Route.bolts FROM Route 
+                JOIN Location ON Route.location_id = Location.id
+                JOIN Route_Type ON Route.id = Route_Type.route_id
+                JOIN Type ON Type.id = Route_Type.type_id
+                WHERE Route.pending = 1
+                GROUP BY Route.id;""")
+    
+    routes = cur.fetchall() # Gets all pending routes and their information
+
+    cur.execute("""SELECT Location.id, Location.name, Location.coordinates, Setting.name, Location.image FROM Location
+                JOIN Setting ON Location.setting_id = Setting.id
+                WHERE Location.pending = 1;""")
+    
+    results = cur.fetchall() # Gets all pending locations and their information
+
+    # Loops through results and properly formats the coordinates for google map links and then appends the new row to the locations array
+    locations = []
+    for result in results:
+        coords = result[2].replace(" ", ",")
+        row = [result[0], result[1], coords, result[3], result[4]]
+        locations.append(row)
+
+    con.close()
+
+    return render_template("admin.html", header="Admin", routes=routes, locations=locations)
+
+
+@app.route("/process-submission", methods=["GET", "POST"])
+def process_submissions():
+    con = sqlite3.connect('climbing.db')
+    cur = con.cursor()
+
+    id = request.form.get("id") 
+    type = request.form.get("type") # Used to identify which table to alter
+    action = request.form.get("action") # Either approve or deny
+
+    if action == "approve":
+        cur.execute(f"UPDATE ? SET pending = 0 WHERE id = ?;", (id, type,))  # Sets pending to false, approving the submission
+    else:
+        cur.execute(f"DELETE FROM ? WHERE id = ?;", (id, type,)) # Removes the submission
+        if type == "Route":
+            cur.execute(f"DELETE FROM Route_Type WHERE route_id = ?;", (id,)) # Deletes the routes types if it is a route
+
+    con.commit()
+    con.close()
+    
+    return redirect(url_for('admin'))
 
 
 @app.route("/account", methods=["GET", "POST"])
@@ -292,7 +374,7 @@ def account():
     if request.method == "POST":
         logout()
         return redirect(url_for("home"))
-    return render_template("account.html", header="Account", profile_picture=session.get("profile_picture"), username=session.get("username"))
+    return render_template("account.html", header="Account")
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -321,11 +403,12 @@ def register():
         file_url = url_for("get_file", filename=filename)
 
         # This executes an SQL stament which adds the users registry information to the database
-        cur.execute("INSERT INTO Account (username, password, profile_picture) VALUES (?, ?, ?)", (name, hashed_password, file_url))
+        cur.execute("INSERT INTO Account (username, password, profile_picture, permission_level) VALUES (?, ?, ?, 1)", (name, hashed_password, file_url))
         con.commit()
-        cur.close()
-        return redirect(url_for("login"))
-    return render_template("register.html", form=form, header="Register", profile_picture=session.get("profile_picture"), username=session.get("username"))
+
+        session["user_id"] = cur.lastrowid # Auto logs in by getting the id of the last inserted row
+        return redirect(url_for("home"))
+    return render_template("register.html", form=form, header="Register")
 
 
 @app.route("/uploads/<filename>")
@@ -365,13 +448,15 @@ def login():
         else:
             error = "Username not found."
 
-    return render_template("login.html", header="Login", error=error, profile_picture=session.get("profile_picture"), username=session.get("username"))
+    return render_template("login.html", header="Login", error=error)
 
 
 def logout():
     session["user_id"] = None
     session["profile_picture"] = None
     session["username"] = None
+    session["permission_level"] = None
+
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -5,30 +5,53 @@
         Grade: {{info[2]}} <br>
         Bolts: {{info[3]}} <br>
         Location: {{info[4]}}</p>
-
-    <button data-popup-target="log-popup">Log Route</button> <!-- This button has a custom data field which is used by JS to know what popup it is trying to access-->
+    
+    {% if username %}
+        <button data-popup-target="log-popup" class="button">Log Route</button> <!-- This button has a custom data field which is used by JS to know what popup it is trying to access-->
+    {% else %}
+        <button class="button" onclick="location.href='/login'">Log in to Log a Route</button> <!-- Redirects to the login page if they are not logged in -->
+    {% endif %}
 
     <div class="popup" id="log-popup"> <!-- Popup Div-->
         <div class="popup-inner"> <!-- Popup Content -->
-            <h2>Log Route</h2>
-            <form  method="POST"> <!-- This is the form to log a climb -->
-                <input type="hidden" value="{{info[0]}}"> <!-- This will input the climbs name, which can be used as a unique identifier-->
+            <h2>Log Route</h2> <br>
+            <form action="{{ url_for('log_route') }}" method="POST"> <!-- This is the form to log a climb -->
+                <input type="hidden" id="route_id" name="route_id" value="{{info[5]}}"> <!-- This will input the climbs id -->
+
+                <input type="hidden" name="url" id="url" value="{{ request.full_path }}"> <!-- Gets the current url route-->
+                
+                <input type="hidden" name="local_date" id="local_date">
 
                 <div class="rating-box">
-                    <h2>How was the climb?</h2>
+                    <h3>How was the climb?</h3>
                     <div class="stars">
-                        {% for i in  range(5) %}
-                            <i class="fa-solid fa-star"><input type="radio" id="star" value="{{i}}"></i>
+                        {% for i in  range(1, 6) %}
+                            <input type="radio" id="star{{i}}" name="rating" value="{{i}}" required>
+                            <label for="star{{i}}">
+                                <i class="fa-solid fa-star"></i>
+                            </label>
                         {% endfor %}
                     </div>
-                </div>
+                </div> <br><br>
 
-                <button type="submit">Publish</button>
-                <button>Create Post</button>
+                <button type="submit" class="button">Publish</button>
+                <button class="button">Create Post</button>
             </form>
-            <button data-popup-close>Close</button>
+            <button data-popup-close class="button">Close</button>
         </div> 
     </div><br><br>
     <script src="/static/js/popup.js"></script>
     <script src="/static/js/stars.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function(){ // Executes code when the HTML has loaded
+            const date = new Date(); // New date based on local time from the users device
+            const year = date.getFullYear(); // Gets just the year
+            const month = String(date.getMonth() + 1).padStart(2, "0"); // Gets the month and its proper index, then in case its a 1 digit month it makes sure that there are 2 digits and it starts with 0(if needed)
+            const day = String(date.getDate()).padStart(2, "0");
+            
+            const formattedDate = `${year}-${month}-${day}`; // Format of YYYY-MM-DD
+
+            document.getElementById("local_date").value = formattedDate; // Sets the local date value to the current date
+        });
+    </script>
 {% endblock %} <!-- Shows all info for the given route. -->

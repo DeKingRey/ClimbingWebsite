@@ -18,7 +18,13 @@
                 <li><a href="/register">Register</a></li>
                 <li><a href="/login">Login</a></li>
             {% endif %} <!-- Sets up the navbar for every page, and adds the register and login elements to the navbar if the user is not logged in -->
+            {% if permission_level %}
+                {% if permission_level >= 2 %}
+                    <li><a href="/admin">Admin</a></li>
+                {% endif %} <!-- Admin page will be displayed if the user is an admin -->
+            {% endif %}
         </ul>
+
         <a href="/account" class="profile-link">
             <div class="profile">
                 {% if profile_picture %}

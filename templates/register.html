@@ -1,44 +1,64 @@
 {% extends 'layout.html' %}
 {% block content %} 
     <!-- Form to register a new account -->
-    <h3>Register</h3>
+    <h2>Register</h2>
     <!-- The 'encytype' allows you to send files through the form -->
     <form method="POST"  enctype="multipart/form-data">
         <!-- The hidden_tag() function protects against malicious servers using the users information by creating a hidden CSRF token which will only make uploads valid on the trusted website. CSRF: Cross site request forgery -->
         {{ form.hidden_tag() }}
-
-        {% for field, errors in form.errors.items() %}
-            {% for error in errors %}
-                <p style="color: red">{{ error }}</p>
-            {% endfor %}
-        {% endfor %} <!-- If there is an error it will be displayed. -->
         
         <div class="row justify-content-center">
             <!-- Name input field -->
-            <div class="col-auto">
-                {{ form.name(class="form-control") }}
+            <div class="form-group" style="width: 40%">
+                <label for="name">Username</label>
+                <div class="col-auto">
+                    {{ form.name(class="form-control") }}
+                    {% if form.name.errors %}
+                        <div class="form-error">{{ form.name.errors[0] }}</div>
+                    {% endif %}
+                </div>
             </div>
 
             <!-- Password input field -->
-            <div class="col-auto">
-                {{ form.password(class="form-control") }}
+            <div class="form-group" style="width: 40%">
+                <label for="password">Password</label>
+                <div class="col-auto">
+                    {{ form.password(class="form-control") }}
+                    {% if form.password.errors %}
+                        <div class="form-error">{{ form.password.errors[0] }}</div>
+                    {% endif %} <!-- Displays errors for the corresponding field-->
+                </div>
             </div>
 
             <!-- Confirm password input field -->
-            <div class="col-auto">
-                {{ form.confirm_password(class="form-control") }}
+            <div class="form-group" style="width: 40%">
+                <label for="confirm-password">Confirm Password</label>
+                <div class="col-auto">
+                    {{ form.confirm_password(class="form-control") }}
+                    {% if form.confirm_password.errors %}
+                        <div class="form-error">{{ form.confirm_password.errors[0] }}</div>
+                    {% endif %}
+                </div>
             </div>
 
             <!-- Profile picture input field -->
-            <div class="col-auto">
-                {{ form.photo(class="form-control") }}
-            </div>
+            <div class="form-group" style="width: 40%">
+                <label for="image" class="button">Upload Profile Picture</label>
+                <div class="col-auto">
+                    {{ form.photo(class="form-control", id="image", style="display: none;") }}
+                    {% if form.photo.errors %}
+                        <div class="form-error">{{ form.photo.errors[0] }}</div>
+                    {% endif %}
+                </div>
 
+                <img src="#" alt="Image Preview" id="photo-preview" class="photo-preview profile-preview">
+            </div>
+            
             <!-- Submit button -->
-            <div class="col-auto">
-                {{ form.submit(class="btn btn-success") }}
+            <div class="form-group" style="width: 60%">
+                {{ form.submit(class="btn btn-success button submit-button") }}
             </div>
         </div>
-
     </form>
+    <script src="/static/js/preview.js"></script>
 {% endblock %}

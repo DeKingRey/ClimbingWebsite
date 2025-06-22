@@ -1,3 +1,11 @@
+:root {
+    --color-cream: #FBFBF5;
+    --color-sunshine: #FEED9F;
+    --color-gold: #F7D327;
+    --color-mustard: #D0A823;
+    --color-charcoal: #504C41;
+} /* Sets my primary colour palette names*/
+
 /* Sets the font of all text to roboto*/
 @font-face {
     font-family: "roboto";
@@ -8,30 +16,165 @@
 }
 
 /* #region Basics */
-    /* Setsup the body, main content, and headers with their margins, colours, and positions */
-    body {
-        margin: 0;
-        font-size: 30px;
-        background-color: #fbfbf5;
-    }
+/* Setsup the body, main content, and headers with their margins, colours, and positions */
+body {
+    margin: 0;
+    font-size: 30px;
+    background-color: var(--color-cream);
 
-    main {
-        margin-left: 20px;
-        margin-right: 20px;
-    }
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
 
-    header {
-        font-size: 75px;
-        text-align: center;
-        background-color: #feed9f;
-    }
+main {
+    margin-left: 20px;
+    margin-right: 20px;
+
+    flex: 1;
+}
+
+header {
+    font-size: 75px;
+    text-align: center;
+    background-color: var(--color-sunshine);
+}
+
+h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--color-charcoal);
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+h2 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--color-charcoal);
+    margin-bottom: 10px;
+} /* Styles the headings*/
+
+h4 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--color-charcoal);
+    margin-bottom: 10px;
+}
+
+.divider {
+    height: 6px;
+    width: 100px;
+    background-color: var(--color-mustard);
+    margin: 30px auto;
+    border-radius: 5px;
+} /* Divider class to create a divider between headings and content */
+
+footer {
+    background-color: var(--color-sunshine);
+    padding: 10px;
+    text-align: center;
+    color: var(--color-charcoal);
+    margin-top: 30px;
+}
 /*#endregion*/
+
+
+/* #region Forms */
+
+form {
+    max-width: 600px;
+    margin: 0;
+    text-align: left;
+}
+
+form button.button, 
+.popup-inner .button,
+.btn {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    width: 75%;
+    margin-bottom: 15px;
+}
+
+.popup-inner .form-group {
+    margin: 0 auto 15px auto;
+}
+
+label {
+    display: inline-block;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--color-charcoal);
+}
+
+input, select {
+    background-color: #fefce9;
+    color: var(--color-charcoal);
+    border: 2px solid var(--color-gold);
+    border-radius: 16px;
+    padding: 1ex 2ex;
+    font-size: 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    width: 80%;
+    margin-right: auto;
+    display: block;
+}
+
+input:focus, select:focus {
+    border-color: var(--color-mustard);
+    outline: none;
+    box-shadow: 0 0 5px rgba(208, 168, 35, 0.4);
+}
+
+.profile-preview {
+    display: none;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    border: 3px solid white;
+    object-fit: cover;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+    margin-top: 10px;
+} /* Makes a circular image with the default display of none */
+
+.location-preview {
+    display: none;
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 20px;
+    border: 3px solid white;
+    object-fit: cover;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+    margin-top: 10px;
+}
+
+.form-error {
+    color: #DC3545;
+    background-color: #F8D7DA;
+    border: 1px solid #F5C6CB;
+    padding: 10px 15px;
+    margin: 10px auto 10px auto;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    text-align: center;
+} /* Styles the errors to make them appear with the field */
+
+/* #endregion */
 
 
 /* #region Navbar */
     /* Setsup the navbar appearance and makes it a flexbox which holds all the navbar list elements which have stylised links and react when hovered over. */
     .navbar{
-        background-color: #f7d327;
+        background-color: var(--color-gold);
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -56,7 +199,7 @@
         align-items: stretch;
     }
     .navbar a {
-        color: #504c41;
+        color: var(--color-charcoal);
         text-decoration: none;
         padding: 0 15px;
         text-align: center;
@@ -106,26 +249,46 @@
 /* #endregion */
 
 
-/* #region Popup */
+/* #region Buttons */
 /* Styles the popup and its button which is a gradient bean shape, the popup has a fade in transition and also has the functionality for whether its open or not. Then styles the content within the popup. */
-button {
-    background-image: linear-gradient(to right, #D0A823, #F7D327);
+.button,
+label.button {
+    background-image: linear-gradient(to right, var(--color-mustard), var(--color-gold));
     border-radius: 20px;
-    border: 0;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    border: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
     color: #FBFBF5;
+    font-size: 1rem;
+    text-transform: none;
+    font-weight: normal;
+    text-align: center;
     cursor: pointer;
     padding: 10px 25px;
+    transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+    margin-top: 30px;
 }
 
-button:active {
-    opacity: 0.8;
+.button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
 }
+
+.button:active {
+    transform: scale(0.98);
+    opacity: 0.85;
+} /* This styles the button with a gradient, shadow, and a transition which will work with when it is hovered over to make it move upwards */
+
+/* #endregion */
+
+/* #region Popup*/
 
 .popup {
     background-color: rgba(0, 0, 0, 0.3);
     opacity: 0;
 
+    backdrop-filter: blur(5px);
+    background: rgba(255, 255, 255, 0.6);
+    
     position: fixed;
     top: 0;
     left: 0;
@@ -138,7 +301,7 @@ button:active {
     display: flex;
     align-items: center;
     justify-content: center;
-}
+} 
 
 .popup.open {
     opacity: 1;
@@ -150,18 +313,49 @@ button:active {
     border-radius: 5px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
     padding: 15px 25px;
-    text-align: center;
     width: 380px;
+
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
 }
 
 .popup-inner h2 {
     margin: 0;
+    margin-bottom: 30px;
+    text-align: center;
+} /* All this styles the popup, making it appear with the javascript, and controlling its position, size, and colours*/
+
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 2.5rem;
+    color: var(--color-charcoal);
+    cursor: pointer;
+    font-weight: bold;
+    transition: color 0.3s ease;
+    z-index: 10001;
+} /* Styles the close button to appear in the top right of the popup*/
+
+.close-button:hover {
+    color: var(--color-mustard);
+} /* Close button transitions to mustard color when hovered over*/
+
+.submit-button {
+    background-image: linear-gradient(to right, var(--color-sunshine), var(--color-gold));
+    font-weight: bold;
+    color: var(--color-charcoal);
+    padding: 15px 30px;
+    font-size: 1.25rem;
 }
 
-.popup-inner p, form {
-    line-height: 24px;
-    margin: 10px 0;
+.submit-button:hover {
+    background-image: linear-gradient(to right, var(--color-gold), var(--color-mustard));
 }
+
 /* #endregion */
 
 
@@ -176,6 +370,11 @@ button:active {
 .dropdown {
     position: relative; 
     display: inline-block;
+    width: 92%;
+}
+
+.dropdown button {
+    width: 100%;
 }
 
 .dropdown-content {
@@ -200,19 +399,17 @@ button:active {
 
 /* #region Search Bar */
 
-
 .location-wrapper {
     position: relative;
-    display: inline-block;
-    width: 100%;
-    max-width: 400px;
+    display: block;
+    width: 92%;
 }
 
 #location_input {
     width: 100%;
-    padding: 8px;
+    padding: 1ex 2ex;
     box-sizing: border-box;
-}
+} /* This is the search box for the locations*/
 
 .suggestions {
     position: absolute;
@@ -245,21 +442,183 @@ button:active {
     background-color: #f0f0f0;
 }
 
+/* #endregion */
+
+/* #region Star Rating*/
+.rating-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.rating-box h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #444;
+} /* This makes sure the stars are in the right position and displayed properly */
+
 .rating-box .stars {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    gap: 12px;
+}
+
+.stars input[type="radio"] {
+    display: none;
 }
 
 .stars i {
     color: #e6e6e6;
-    font-size: 20px;
+    font-size: 28px;
     cursor: pointer;
-    transition: color 0.2s ease;
+    transition: color 0.3s ease;
 }
 
 .stars i.active {
     color: #ff9c1a;
+} /* This is for the stars themselves giving them a transition and functionality for when they are clicked*/
+/* #endregion */
 
+/* #region Location Page */
+
+/* Location Image */
+.location-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    margin-top: 30px;
+    align-items: flex-start;
+    justify-content: center;
+
+    background-color: #faf6eb;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+} /* Styles the whole content for the location page, making it a flexbox in the right positions etc*/
+
+.image-container {
+    display: flex;
+    flex: 1 1 300px;
+    justify-content: center;
+    align-items: center;
+
+    max-width: 300px;
+    overflow: hidden;
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    background-color: #f9f9f9;
+    padding: 10px;
 }
 
+img {
+    display: block;
+    width: 100%;
+    max-height: 300px;
+    border-radius: 20px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+    margin: 0 auto;
+} 
+
+img:hover {
+    transform: scale(1.03);
+} /* Styles the image container and adds an animation when the image is hovered over*/
+
+/* The following CSS is for the route links*/
+.routes-container {
+    flex: 1 1 300px;
+} /* Allows the container to shrink and grow depending on othet things*/
+
+.routes-list {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.route-link {
+    background-color: #faefbd;
+    border-left: 6px solid var(--color-gold);
+    padding: 12px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 1.2rem;
+    color: var(--color-charcoal);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+
+    font-weight: 600;
+}
+
+.route-link:hover {
+    background-color: var(--color-sunshine);
+    transform: translateX(5px);
+} /* Puts routes in a styled container and gives them an animation when hovered over */
+
+/* #endregion */
+
+/* #region Admin Page*/
+
+.extra-info {
+    display: none;
+    margin-top: 5px;
+    margin-left: 5px;
+    padding: 10px;
+    background-color: #f2f2f2;
+    border-radius: 8px;
+} /* Styles the info div, making it an element in a box below the header also sets default display to none when button 
+isn't clicked*/
+
+.toggle-button {
+    position: relative;
+    top: 15px;
+    cursor: pointer;
+    font-size: 1.2em;
+    border: none;
+    background: none;
+} /* Styles the toggle button*/
+
+.pending-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
+.pending-submissions {
+    margin-left: 30px;
+} /* Styles the content making the header and button align, and pushing the routes to the right */
+
+.approve-button {
+    background-color: #28a745;
+    font-size: 20px;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+    margin-right: 10px;
+}
+
+.approve-button:hover {
+    background-color: #218838; /* darker green */
+} /* Styles the approve button making it green and transition to darker green when hovered over */
+
+.deny-button {
+    background-color: #dc3545;
+    font-size: 20px;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+}
+
+.deny-button:hover {
+    background-color: #c82333; /* darker red */
+} /* Styles the deny button making it red and transition to darker red when hovered over */
+
+/* #endregion */
