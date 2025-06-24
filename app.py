@@ -23,6 +23,7 @@ from wtforms import StringField, PasswordField, SubmitField
 from slugify import slugify
 
 from banned_words import BANNED_WORDS
+#from profanity_filter import ProfanityFilter
 
 from atomic_agents.agents.base_agent import  BaseAgent, BaseAgentConfig, BaseAgentInputSchema
 
@@ -313,7 +314,6 @@ def log_route():
     return redirect(current_url)
 
 
-
 @app.route("/posts", methods=["GET", "POST"])
 def posts():
     return render_template("posts.html", header="Posts")
@@ -376,9 +376,51 @@ def process_submissions():
 @app.route("/account", methods=["GET", "POST"])
 def account():
     if request.method == "POST":
-        logout()
-        return redirect(url_for("home"))
+        action = request.form.get("action")
+
+        if action == "edit":
+            return redirect(url_for("edit_account"))
+
+        if action == "logout":
+            logout()
+            return redirect(url_for("home"))
     return render_template("account.html", header="Account")
+
+
+@app.route("/edit_account", methods=["GET", "POST"])
+def edit_account():
+    if request.method == "POST":
+        errors = {}
+        username = request.form.get("username").strip()
+        display_name = request.form.get("display_name").strip()
+        profile_picture = request.form.get("profile_picture").strip()
+
+        if profanity_check(username):
+            errors["username"] = "Username contains inappropriate language."
+
+        if profanity_check(display_name):
+            errors["display_name"] = "Display name contains inappropriate language."
+
+        try:
+            con = sqlite3.connect("climbing.db")
+            cur = con.cursor()
+
+            cur.execute("UPDATE Account SET username = ?, display_name = ?, profile_picture = ? WHERE username = ?", 
+                        (username, display_name, profile_picture, session.get("username")))
+            con.commit()
+            con.close()
+
+            session["profile_picture"] = profile_picture
+            session["username"] = username
+            session["display_name"] = display_name
+        except sqlite3.IntegrityError:
+            errors["username"] = "This username is already taken"
+
+    return render_template("edit_account.html", header="Account")
+
+
+def profanity_check(text):
+    return any(banned_word in text.lower() for banned_word in BANNED_WORDS)
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -389,8 +431,8 @@ def register():
     form = RegisterForm()
 
     if form.validate_on_submit():
-        name = form.name.data
-        password = form.password.data
+        name = form.name.data.strip()
+        password = form.password.data.strip()
         
         # This hashes the password making it secure and able to be stored in a database. Hashed things cannot be unhashed so it is quite secure
         hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
