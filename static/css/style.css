@@ -28,7 +28,7 @@ body {
 }
 
 main {
-    margin-left: 20px;
+    margin-left: 40px;
     margin-right: 20px;
 
     flex: 1;
@@ -135,8 +135,11 @@ input:focus, select:focus {
     box-shadow: 0 0 5px rgba(208, 168, 35, 0.4);
 }
 
-.profile-preview {
+.photo-preview {
     display: none;
+}
+
+.profile-preview {
     width: 200px;
     height: 200px;
     border-radius: 50%;
@@ -147,7 +150,6 @@ input:focus, select:focus {
 } /* Makes a circular image with the default display of none */
 
 .location-preview {
-    display: none;
     max-width: 200px;
     max-height: 200px;
     border-radius: 20px;
@@ -620,5 +622,42 @@ isn't clicked*/
 .deny-button:hover {
     background-color: #c82333; /* darker red */
 } /* Styles the deny button making it red and transition to darker red when hovered over */
+
+/* #endregion */
+
+/* #region Account Page */
+
+.account-info-container {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+} /* Positions the header container making it a flexbox to properly position the edit button */
+
+.edit-button {
+    position: absolute;
+    top: 35px;
+    right: 100px;
+    background-color: var(--color-gold);
+    color: var(--color-charcoal);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 18px;
+    box-shadow: 0 2px 6px rgab(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+} /* Positions the circular edit button and it gives it style */
+
+.edit-button:hover {
+    background-color: var(--color-mustard);
+    transform: translateY(-2px);
+} /* Changes the background color when hovered over*/
 
 /* #endregion */

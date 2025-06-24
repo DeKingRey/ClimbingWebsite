@@ -78,6 +78,7 @@ def inject_user():
         "username": session.get("username"),
         "profile_picture": session.get("profile_picture"),
         "permission_level": session.get("permission_level"),
+        "display_name": session.get("display_name"),
     }
 
 
@@ -88,19 +89,22 @@ def home():
     if user_id is not None:
         con = sqlite3.connect("climbing.db")
         cur = con.cursor()
-        cur.execute("SELECT profile_picture, username, permission_level FROM Account WHERE id = ?", (user_id,))
+        cur.execute("SELECT profile_picture, username, permission_level, display_name FROM Account WHERE id = ?", (user_id,))
         result = cur.fetchone()
         profile_picture = result[0]
         username = result[1]
         permission_level = result[2]
+        display_name = result[3]
 
         session["profile_picture"] = profile_picture
         session["username"] = username
         session["permission_level"] = permission_level
+        session["display_name"] = display_name
     else:
         profile_picture = None
         username = None
-        admin = 0
+        permission_level = 0
+        display_name = None
 
     return render_template("home.html", header="Home")
     
@@ -403,7 +407,7 @@ def register():
         file_url = url_for("get_file", filename=filename)
 
         # This executes an SQL stament which adds the users registry information to the database
-        cur.execute("INSERT INTO Account (username, password, profile_picture, permission_level) VALUES (?, ?, ?, 1)", (name, hashed_password, file_url))
+        cur.execute("INSERT INTO Account (username, password, profile_picture, permission_level, display_name) VALUES (?, ?, ?, 1, ?)", (name, hashed_password, file_url, name))
         con.commit()
 
         session["user_id"] = cur.lastrowid # Auto logs in by getting the id of the last inserted row
@@ -456,6 +460,7 @@ def logout():
     session["profile_picture"] = None
     session["username"] = None
     session["permission_level"] = None
+    session["display_name"] = None
 
 
 if __name__ == "__main__":

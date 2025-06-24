@@ -2,7 +2,22 @@
 {% block content %}
     {% if username %}
         <form action="/account" method="POST">
-            <button type="submit" class="button" style="margin-top: 30px;">Logout</button>
+            <div class="account-info-container">
+                <div class="left-align" style="text-align: left; display: inline-block;">
+                    <h2>Account Info</h2>
+                    <div class="divider"></div>
+                </div>
+                <button type="submit" value="edit" class="edit-button fa-solid fa-pencil"></button>
+            </div>
+            
+            <!-- Account info -->
+            <p><strong>Username</strong> - {{ username }}</p>
+            <p><strong>Display Name</strong> - {{ display_name }}</p>
+            <p><strong>Profile Picture</strong>
+                <img src="{{ profile_picture }}" alt="profile picture" class="profile-preview" style="margin: 20px 0;"></p>
+            
+
+            <button type="submit" value="logout" class="button" style="margin-top: 30px; font-size: 25px">Logout</button>
         </form>     <!-- If username is given(aka the user is logged in) the logout button will display on the account page. -->
     {% else %}
         <h3>You are not logged in. <a href="/login">Log in here</a> Or <a href="/register">Register here</a>  if you don't have an account.</h3>     <!-- Otherwise provides the login and register pages. -->
