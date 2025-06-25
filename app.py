@@ -361,9 +361,9 @@ def process_submissions():
     action = request.form.get("action") # Either approve or deny
 
     if action == "approve":
-        cur.execute(f"UPDATE ? SET pending = 0 WHERE id = ?;", (id, type,))  # Sets pending to false, approving the submission
+        cur.execute(f"UPDATE {type} SET pending = 0 WHERE id = ?;", (id,))  # Sets pending to false, approving the submission
     else:
-        cur.execute(f"DELETE FROM ? WHERE id = ?;", (id, type,)) # Removes the submission
+        cur.execute(f"DELETE FROM {type} WHERE id = ?;", (id,)) # Removes the submission
         if type == "Route":
             cur.execute(f"DELETE FROM Route_Type WHERE route_id = ?;", (id,)) # Deletes the routes types if it is a route
 
@@ -390,37 +390,50 @@ def account():
 @app.route("/edit_account", methods=["GET", "POST"])
 def edit_account():
     if request.method == "POST":
-        errors = {}
-        username = request.form.get("username").strip()
-        display_name = request.form.get("display_name").strip()
-        profile_picture = request.form.get("profile_picture").strip()
+        action = request.form.get("action")
 
-        if profanity_check(username):
-            errors["username"] = "Username contains inappropriate language."
+        if action == "apply":
+            errors = {"username": None,
+                      "display_name": None,
+                      "profile_picture", None
+                      } # Dictionary of errors
+            username = request.form.get("username").strip()
+            display_name = request.form.get("display_name").strip()
+            profile_picture = request.form.get("profile_picture") # Gets all the inputs and strips them
 
-        if profanity_check(display_name):
-            errors["display_name"] = "Display name contains inappropriate language."
+            if profile_picture: # Makes sure the profile picture was updated
+                profile_picture = profile_picture.strip()
+            else:
+                profile_picture = request.form.get("current_profile")
 
-        try:
-            con = sqlite3.connect("climbing.db")
-            cur = con.cursor()
+            if profanity_check(username):
+                errors["username"] = "Username contains inappropriate language." # Makes sure the username and display name aren't innappropriate
 
-            cur.execute("UPDATE Account SET username = ?, display_name = ?, profile_picture = ? WHERE username = ?", 
-                        (username, display_name, profile_picture, session.get("username")))
-            con.commit()
-            con.close()
+            if profanity_check(display_name):
+                errors["display_name"] = "Display name contains inappropriate language."
 
-            session["profile_picture"] = profile_picture
-            session["username"] = username
-            session["display_name"] = display_name
-        except sqlite3.IntegrityError:
-            errors["username"] = "This username is already taken"
+            try:
+                con = sqlite3.connect("climbing.db")
+                cur = con.cursor()
+
+                cur.execute("UPDATE Account SET username = ?, display_name = ?, profile_picture = ? WHERE username = ?", 
+                            (username, display_name, profile_picture, session.get("username"))) # Updates the account with the new info
+                con.commit()
+                con.close()
+
+                session["profile_picture"] = profile_picture
+                session["username"] = username
+                session["display_name"] = display_name # Sets the new inputs
+            except sqlite3.IntegrityError:
+                errors["username"] = "This username is already taken" # If there is an error, the username is not unique
+        else: 
+            return redirect(url_for("account"))
 
     return render_template("edit_account.html", header="Account")
 
 
 def profanity_check(text):
-    return any(banned_word in text.lower() for banned_word in BANNED_WORDS)
+    return any(banned_word in text.lower() for banned_word in BANNED_WORDS) # Returns true if the text contains a banned word
 
 
 @app.route("/register", methods=["GET", "POST"])

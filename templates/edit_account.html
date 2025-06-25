@@ -7,35 +7,49 @@
                     <h2>Edit Account Info</h2>
                     <div class="divider"></div>
                 </div>
-                <button type="submit" name="action" value="edit" class="edit-button fa-solid fa-pencil"></button>
+                <button type="submit" class="close-button edit-button" name="action" value="close" style="font-size: 30px;">&times;</button>
             </div>
             
             <!-- Username edit -->
             <div class="form-group" style="width: 40%;">
                 <label for="username"><strong>Username</strong> - {{ username }}</label>
                 <input type="text" name="username" id="username" value="{{ username }}"> 
+
+                {{% if errors["username"] %}} <!-- Displays the fields potential errors -->
+                    <div class="form-error">{{errors["username"]}}</div>
+                {{% endif %}}
             </div> 
             
             <!-- Display name edit -->
             <div class="form-group" style="width: 40%;">
                 <label for="display_name"><strong>Display Name</strong> - {{ display_name }}</label>
                 <input type="text" name="display_name" id="display_name" value="{{ display_name }}"> 
+
+                {{% if errors["display_name"] %}} <!-- Displays the fields potential errors -->
+                    <div class="form-error">{{errors["display_name"]}}</div>
+                {{% endif %}}
             </div>
 
             <!-- Profile picture input edit -->
             <div class="form-group" style="width: 40%">
-                <label for="profile_picture"><strong>Profile Picture</strong>
-                <img src="{{ profile_picture }}" alt="profile picture" class="profile-preview" style="margin: 20px 0;"></label>
-                
-                <input type="file" id="image" name="image" accept="image/*" style="display: none;" value="{{ profile_picture }}">
+                <label for="image"><strong>Profile Picture</strong>
+                    <img src="{{ profile_picture }}" alt="profile picture" class="photo-preview profile-preview" style="margin: 20px 0; display: block;" id="photo-preview"> <!-- Will display the current set profile picture -->
+                </label>
+                <label for="image" class="button">Change Profile Picture</label>
 
-                <img src="#" alt="Image Preview" id="photo-preview" class="photo-preview profile-preview">
+                <input type="hidden" name="current_profile" value="{{ profile_picture }}"> <!-- Sets the default profile picture-->
+                <input type="file" id="image" name="image" accept="image/*" style="display: none;">
+
+                {{% if errors["profile_picture"] %}} <!-- Displays the fields potential errors -->
+                    <div class="form-error">{{errors["profile_picture"]}}</div>
+                {{% endif %}}
             </div>
 
             <div class="form-group" style="width: 60%;">
-                <button type="submit" class="button submit-button">Apply Changes</button>
+                <button type="submit" class="button submit-button" name="action" value="apply">Apply Changes</button>
             </div>
         </form>
+        <script src="/static/js/preview.js"></script>
     {% else %}
         <h3>You are not logged in. <a href="/login">Log in here</a> Or <a href="/register">Register here</a>  if you don't have an account.</h3>     <!-- Otherwise provides the login and register pages. -->
     {% endif %}
