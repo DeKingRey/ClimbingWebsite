@@ -15,9 +15,9 @@
                 <label for="username"><strong>Username</strong> - {{ username }}</label>
                 <input type="text" name="username" id="username" value="{{ username }}"> 
 
-                {{% if errors["username"] %}} <!-- Displays the fields potential errors -->
+                {% if errors["username"] %} <!-- Displays the fields potential errors -->
                     <div class="form-error">{{errors["username"]}}</div>
-                {{% endif %}}
+                {% endif %}
             </div> 
             
             <!-- Display name edit -->
@@ -25,9 +25,9 @@
                 <label for="display_name"><strong>Display Name</strong> - {{ display_name }}</label>
                 <input type="text" name="display_name" id="display_name" value="{{ display_name }}"> 
 
-                {{% if errors["display_name"] %}} <!-- Displays the fields potential errors -->
+                {% if errors["display_name"] %} <!-- Displays the fields potential errors -->
                     <div class="form-error">{{errors["display_name"]}}</div>
-                {{% endif %}}
+                {% endif %}
             </div>
 
             <!-- Profile picture input edit -->
@@ -40,9 +40,9 @@
                 <input type="hidden" name="current_profile" value="{{ profile_picture }}"> <!-- Sets the default profile picture-->
                 <input type="file" id="image" name="image" accept="image/*" style="display: none;">
 
-                {{% if errors["profile_picture"] %}} <!-- Displays the fields potential errors -->
+                {% if errors["profile_picture"] %} <!-- Displays the fields potential errors -->
                     <div class="form-error">{{errors["profile_picture"]}}</div>
-                {{% endif %}}
+                {% endif %}
             </div>
 
             <div class="form-group" style="width: 60%;">

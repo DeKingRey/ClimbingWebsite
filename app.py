@@ -389,14 +389,14 @@ def account():
 
 @app.route("/edit_account", methods=["GET", "POST"])
 def edit_account():
+    errors = {"username": None,
+                "display_name": None,
+                "profile_picture": None
+                } # Dictionary of errors
     if request.method == "POST":
         action = request.form.get("action")
 
         if action == "apply":
-            errors = {"username": None,
-                      "display_name": None,
-                      "profile_picture", None
-                      } # Dictionary of errors
             username = request.form.get("username").strip()
             display_name = request.form.get("display_name").strip()
             profile_picture = request.form.get("profile_picture") # Gets all the inputs and strips them
@@ -411,25 +411,28 @@ def edit_account():
 
             if profanity_check(display_name):
                 errors["display_name"] = "Display name contains inappropriate language."
+            
+            if not any(errors.values()): # Only runs if there are no errors 
+                try:
+                    con = sqlite3.connect("climbing.db")
+                    cur = con.cursor()
 
-            try:
-                con = sqlite3.connect("climbing.db")
-                cur = con.cursor()
+                    cur.execute("UPDATE Account SET username = ?, display_name = ?, profile_picture = ? WHERE username = ?", 
+                                (username, display_name, profile_picture, session.get("username"))) # Updates the account with the new info
+                    con.commit()
+                    con.close()
 
-                cur.execute("UPDATE Account SET username = ?, display_name = ?, profile_picture = ? WHERE username = ?", 
-                            (username, display_name, profile_picture, session.get("username"))) # Updates the account with the new info
-                con.commit()
-                con.close()
+                    session["profile_picture"] = profile_picture
+                    session["username"] = username
+                    session["display_name"] = display_name # Sets the new inputs
 
-                session["profile_picture"] = profile_picture
-                session["username"] = username
-                session["display_name"] = display_name # Sets the new inputs
-            except sqlite3.IntegrityError:
-                errors["username"] = "This username is already taken" # If there is an error, the username is not unique
+                    return redirect(url_for("/account"))
+                except sqlite3.IntegrityError:
+                    errors["username"] = "This username is already taken" # If there is an error, the username is not unique
         else: 
             return redirect(url_for("account"))
 
-    return render_template("edit_account.html", header="Account")
+    return render_template("edit_account.html", header="Account", errors=errors)
 
 
 def profanity_check(text):
