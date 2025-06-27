@@ -17,7 +17,7 @@ from flask_bcrypt import Bcrypt, check_password_hash
 from flask_uploads import UploadSet, IMAGES, configure_uploads
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
-from wtforms.validators import DataRequired, Length, EqualTo, Optional, NoneOf
+from wtforms.validators import DataRequired, Length, EqualTo, Optional, NoneOf, ValidationError
 from wtforms import StringField, PasswordField, SubmitField
 
 from slugify import slugify
@@ -42,16 +42,22 @@ photos = UploadSet("photos", IMAGES)
 configure_uploads(app, photos)
 
 
+def NoSpaces(form, field, message=None):
+    if " " in field.data:
+        raise ValidationError("message")
+
+
 # This creates a class which can be used to make forms(specifically for accounts)
 class RegisterForm(FlaskForm):
     # Creates the name field which has to have input to be valid
     name = StringField("Name", validators=[DataRequired("Field should not be empty"),
-                                           NoneOf(BANNED_WORDS, message="Please avoid using inappropriate language.")
+                                           NoneOf(BANNED_WORDS, message="Please avoid using inappropriate language"),
+                                           Length(min=3, max=20, message="Username must be between 3 and 20 characters long")
                                            ])
     # Creates a password field which can't be empty and has to be at least 8 characters long
     password = PasswordField("Password", validators=[
         DataRequired("Field should not be empty"), 
-        Length(min=8, message="Password should be at least 8 characters long")
+        Length(min=8, max=32, message="Password must be between 8 and 32 characters long")
         ])
     # Confirms that the user inputed the correct password by checking if it's the same as the previously defined Password
     confirm_password = PasswordField("Confirm_Password", validators=[EqualTo("password", "Passwords are not matching")])
@@ -399,38 +405,48 @@ def edit_account():
         if action == "apply":
             username = request.form.get("username").strip()
             display_name = request.form.get("display_name").strip()
-            profile_picture = request.form.get("profile_picture") # Gets all the inputs and strips them
-
-            if profile_picture: # Makes sure the profile picture was updated
-                profile_picture = profile_picture.strip()
-            else:
-                profile_picture = request.form.get("current_profile")
 
             if profanity_check(username):
                 errors["username"] = "Username contains inappropriate language." # Makes sure the username and display name aren't innappropriate
+            elif not username:
+                errors["username"] = "Username cannot be empty."
 
             if profanity_check(display_name):
                 errors["display_name"] = "Display name contains inappropriate language."
-            
+            elif not display_name:
+                errors["display_name"] = "Display name cannot be empty."
+
             if not any(errors.values()): # Only runs if there are no errors 
                 try:
+                    profile_picture = request.files.get("image") # Gets all the inputs and strips them
+
+                    if profile_picture and profile_picture.filename != "": # Makes sure the profile picture was updated
+                        print(profile_picture)
+                        filename = photos.save(profile_picture) # Saves the pfp to uploads
+                        file_url = url_for("get_file", filename=filename) # Gets the url for it 
+                    else:
+                        file_url = request.form.get("current_profile") # If the pfp wasn't updated it stays as the current
+                    
+                    print(file_url)
+
                     con = sqlite3.connect("climbing.db")
                     cur = con.cursor()
 
                     cur.execute("UPDATE Account SET username = ?, display_name = ?, profile_picture = ? WHERE username = ?", 
-                                (username, display_name, profile_picture, session.get("username"))) # Updates the account with the new info
+                                (username, display_name, file_url, session.get("username"))) # Updates the account with the new info
                     con.commit()
                     con.close()
 
-                    session["profile_picture"] = profile_picture
+                    session["profile_picture"] = file_url
                     session["username"] = username
                     session["display_name"] = display_name # Sets the new inputs
 
-                    return redirect(url_for("/account"))
+                    return redirect(url_for("account"))
                 except sqlite3.IntegrityError:
                     errors["username"] = "This username is already taken" # If there is an error, the username is not unique
         else: 
-            return redirect(url_for("account"))
+            print(errors)
+            return render_template("edit_account.html", header="Account", errors=errors)
 
     return render_template("edit_account.html", header="Account", errors=errors)
 

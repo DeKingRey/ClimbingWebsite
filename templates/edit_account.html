@@ -1,7 +1,7 @@
 {% extends 'layout.html' %}
 {% block content %}
     {% if username %}
-        <form action="/edit_account" method="POST">
+        <form action="/edit_account" method="POST" enctype="multipart/form-data">
             <div class="account-info-container">
                 <div class="left-align" style="text-align: left; display: inline-block;">
                     <h2>Edit Account Info</h2>
