@@ -398,9 +398,9 @@ def account():
 
 @app.route("/edit_account", methods=["GET", "POST"])
 def edit_account():
-    errors = {"username": None,
-                "display_name": None,
-                "profile_picture": None
+    errors = {"username": [],
+                "display_name": [],
+                "profile_picture": []
                 } # Dictionary of errors
     if request.method == "POST":
         action = request.form.get("action")
@@ -410,14 +410,26 @@ def edit_account():
             display_name = request.form.get("display_name").strip()
 
             if profanity_check(username):
-                errors["username"] = "Username contains inappropriate language." # Makes sure the username and display name aren't innappropriate
-            elif not username:
-                errors["username"] = "Username cannot be empty."
+                errors["username"].append("Username contains inappropriate language.") # Makes sure the username and display name aren't innappropriate
+            if not username:
+                errors["username"].append("Username cannot be empty.")
+
+            # Makes sure the username isn't too short or too long
+            if len(username) > 20: 
+                errors["username"].append("Username must be under 20 characters long")
+            if len(username) < 3:
+                errors["username"].append("Username must be over 3 characters long")
 
             if profanity_check(display_name):
-                errors["display_name"] = "Display name contains inappropriate language."
-            elif not display_name:
-                errors["display_name"] = "Display name cannot be empty."
+                errors["display_name"].append("Display name contains inappropriate language.")
+            if not display_name:
+                display_name = username
+
+            # Makes sure the display name isn't too short or too long
+            if len(display_name) > 20: 
+                errors["display_name"].append("Display name must be under 20 characters long")
+            if len(display_name) < 3:
+                errors["display_name"].append("Display name must be over 3 characters long")
 
             if not any(errors.values()): # Only runs if there are no errors 
                 try:
@@ -428,7 +440,6 @@ def edit_account():
                         file_url = url_for("get_file", filename=filename) # Gets the url for it 
                     else:
                         file_url = request.form.get("current_profile") # If the pfp wasn't updated it stays as the current
-                    
 
                     con = sqlite3.connect("climbing.db")
                     cur = con.cursor()
@@ -444,9 +455,9 @@ def edit_account():
 
                     return redirect(url_for("account"))
                 except sqlite3.IntegrityError:
-                    errors["username"] = "This username is already taken" # If there is an error, the username is not unique
+                    errors["username"].append("This username is already taken") # If there is an error, the username is not unique
         else: 
-            return render_template("edit_account.html", header="Account", errors=errors)
+            return redirect(url_for("account"))
 
     return render_template("edit_account.html", header="Account", errors=errors)
 

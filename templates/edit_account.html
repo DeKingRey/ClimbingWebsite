@@ -15,8 +15,10 @@
                 <label for="username"><strong>Username</strong> - {{ username }}</label>
                 <input type="text" name="username" id="username" value="{{ username }}"> 
 
-                {% if errors["username"] %} <!-- Displays the fields potential errors -->
-                    <div class="form-error">{{errors["username"]}}</div>
+                {% if errors["username"] != [] %} <!-- Displays the fields potential errors -->
+                    {% for error in errors["username"] %}
+                        <div class="form-error">{{ error }}</div>
+                    {% endfor %}
                 {% endif %}
             </div> 
             
@@ -25,8 +27,10 @@
                 <label for="display_name"><strong>Display Name</strong> - {{ display_name }}</label>
                 <input type="text" name="display_name" id="display_name" value="{{ display_name }}"> 
 
-                {% if errors["display_name"] %} <!-- Displays the fields potential errors -->
-                    <div class="form-error">{{errors["display_name"]}}</div>
+                {% if errors["display_name"] != [] %} <!-- Displays the fields potential errors -->
+                    {% for error in errors["display_name"] %}
+                        <div class="form-error">{{ error }}</div>
+                    {% endfor %}
                 {% endif %}
             </div>
 
@@ -40,8 +44,10 @@
                 <input type="hidden" name="current_profile" value="{{ profile_picture }}"> <!-- Sets the default profile picture-->
                 <input type="file" id="image" name="image" accept="image/*" style="display: none;">
 
-                {% if errors["profile_picture"] %} <!-- Displays the fields potential errors -->
-                    <div class="form-error">{{errors["profile_picture"]}}</div>
+                {% if errors["profile_picture"] != [] %} <!-- Displays the fields potential errors -->
+                    {% for error in errors["profile_picture"] %}
+                        <div class="form-error">{{ error }}</div>
+                    {% endfor %}
                 {% endif %}
             </div>
 
