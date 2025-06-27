@@ -11,20 +11,38 @@
         <div class="popup-inner"> <!-- Popup Content -->
             <button data-popup-close class="close-button">&times;</button>
             <h2>Add Route</h2>
-            <form action="{{ url_for('add_route') }}" method="POST"> <!-- This is the form to add a route, with the route name, grade, amount of bolts, location, and types. -->
+            <form id="add_route_form" action="{{ url_for('add_route') }}" method="POST"> <!-- This is the form to add a route, with the route name, grade, amount of bolts, location, and types. -->
                 <div class="form-group">
                     <label for="name">Route Name</label>
                     <input type="text" id="name" name="name" required> 
+
+                    {% if errors["name"] != [] %} <!-- Displays the fields potential errors -->
+                        {% for error in errors["name"] %}
+                            <div class="form-error">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
                 </div>
 
                 <div class="form-group">
                     <label for="grade">Grade</label>
-                    <input type="text" id="grade" name="grade" required> 
+                    <input type="text" id="grade" name="grade" required>
+                    
+                    {% if errors["grade"] != [] %} <!-- Displays the fields potential errors -->
+                        {% for error in errors["grade"] %}
+                            <div class="form-error">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
                 </div>
                 
                 <div class="form-group">
                     <label for="bolts">Amount of Bolts</label>
                     <input type="text" name="bolts" id="bolts"> 
+
+                    {% if errors["bolts"] != [] %} <!-- Displays the fields potential errors -->
+                        {% for error in errors["grade"] %}
+                            <div class="form-error">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
                 </div>
                 
                 <div class="form-group">
@@ -33,6 +51,12 @@
                         <input type="text" placeholder="Search..." name="location" id="location_input" autocomplete="off"  required>
                         <ul class="suggestions" id="locations"></ul> 
                     </div> <!-- Creates the input field and search bar for locations, first having a text input field, and then using suggestions as a list which will display search suggestions. -->
+
+                    {% if errors["location"] != [] %} <!-- Displays the fields potential errors -->
+                        {% for error in errors["location"] %}
+                            <div class="form-error">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
                 </div>
 
                 <input type="hidden" name="url" id="url" value="{{ request.full_path }}"> <!-- Gets the current url route-->

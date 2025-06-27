@@ -130,7 +130,7 @@ def map():
 
     print(locations)
 
-    return render_template("map.html", header="Map", markers=markers, types=types, locations=locations, settings=settings)
+    return render_template("map.html", header="Map", markers=markers, types=types, locations=locations, settings=settings, errors=[])
 
 
 def get_map_info():
@@ -251,14 +251,24 @@ def map_route(location, name):
 
 @app.route("/map/add-route", methods=["GET", "POST"])
 def add_route():
+    errors = {"name": [],
+              "grade": [],
+              "bolts": [],
+              "location": [],
+              "types": []
+              }
+
+    location_name = request.form.get("location")
+    if location_name not in get_locations():
+        errors["location"].append("Location not found")
+    
     current_url = request.form.get("url")
     con = sqlite3.connect("climbing.db")
     cur = con.cursor()
 
-    location_name = request.form.get("location")
+    # Gets the location id
     cur.execute("SELECT id FROM Location WHERE name = ?", (location_name,))
     location_id = cur.fetchone()[0]
-    print(location_id)
 
     # Sets all the field names
     fields = ["name", "grade", "bolts"]
@@ -266,7 +276,6 @@ def add_route():
     values = [request.form.get(field) for field in fields]
 
     types = request.form.getlist("types[]")
-    print(types)
 
     # Will insert the values into the databse, first it uses the field names to define the columns, and then uses the length of fields to find the amount of '?'s, and uses values list as the values
     cur.execute(f"INSERT INTO Route ({', '.join(fields)}, location_id, pending) VALUES({', '.join('?' * len(fields))}, ?, 1)", values + [location_id])
