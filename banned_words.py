@@ -13,7 +13,6 @@ BANNED_WORDS = [
     'poop',
     'poo',
     'cock',
-    'lol',
     'crap',
     'sex',
     'nazi',

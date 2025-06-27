@@ -42,22 +42,25 @@ photos = UploadSet("photos", IMAGES)
 configure_uploads(app, photos)
 
 
-def NoSpaces(form, field, message=None):
-    if " " in field.data:
-        raise ValidationError("message")
-
+def NoSpaces(message):
+    def _no_spaces(form, field):
+        if " " in field.data:
+            raise ValidationError(message)
+    return _no_spaces
 
 # This creates a class which can be used to make forms(specifically for accounts)
 class RegisterForm(FlaskForm):
     # Creates the name field which has to have input to be valid
     name = StringField("Name", validators=[DataRequired("Field should not be empty"),
                                            NoneOf(BANNED_WORDS, message="Please avoid using inappropriate language"),
-                                           Length(min=3, max=20, message="Username must be between 3 and 20 characters long")
+                                           Length(min=3, max=20, message="Username must be between 3 and 20 characters long"),
+                                           NoSpaces(message="Username must not contain spaces")
                                            ])
     # Creates a password field which can't be empty and has to be at least 8 characters long
     password = PasswordField("Password", validators=[
         DataRequired("Field should not be empty"), 
-        Length(min=8, max=32, message="Password must be between 8 and 32 characters long")
+        Length(min=8, max=32, message="Password must be between 8 and 32 characters long"),
+        NoSpaces(message="Password must not contain spaces")
         ])
     # Confirms that the user inputed the correct password by checking if it's the same as the previously defined Password
     confirm_password = PasswordField("Confirm_Password", validators=[EqualTo("password", "Passwords are not matching")])
@@ -421,13 +424,11 @@ def edit_account():
                     profile_picture = request.files.get("image") # Gets all the inputs and strips them
 
                     if profile_picture and profile_picture.filename != "": # Makes sure the profile picture was updated
-                        print(profile_picture)
                         filename = photos.save(profile_picture) # Saves the pfp to uploads
                         file_url = url_for("get_file", filename=filename) # Gets the url for it 
                     else:
                         file_url = request.form.get("current_profile") # If the pfp wasn't updated it stays as the current
                     
-                    print(file_url)
 
                     con = sqlite3.connect("climbing.db")
                     cur = con.cursor()
@@ -445,7 +446,6 @@ def edit_account():
                 except sqlite3.IntegrityError:
                     errors["username"] = "This username is already taken" # If there is an error, the username is not unique
         else: 
-            print(errors)
             return render_template("edit_account.html", header="Account", errors=errors)
 
     return render_template("edit_account.html", header="Account", errors=errors)
@@ -463,29 +463,33 @@ def register():
     form = RegisterForm()
 
     if form.validate_on_submit():
-        name = form.name.data.strip()
-        password = form.password.data.strip()
+        name = form.name.data
+        password = form.password.data
         
         # This hashes the password making it secure and able to be stored in a database. Hashed things cannot be unhashed so it is quite secure
         hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
+        
+        try:
+            # This saves the photos file in the uploads folder
+            if form.photo.data != None:
+                # This saves the file in the uploads folder and gets the filename
+                filename = photos.save(form.photo.data)
+            else:
+                # Guest Profile Picture
+                # If there is no photo input then the users profile picture will be set to the guest profile picture
+                filename = "magnus.png"
+            # This will get the files url from the get_file() function
+            file_url = url_for("get_file", filename=filename)
 
-        # This saves the photos file in the uploads folder
-        if form.photo.data != None:
-            # This saves the file in the uploads folder and gets the filename
-            filename = photos.save(form.photo.data)
-        else:
-            # Guest Profile Picture
-            # If there is no photo input then the users profile picture will be set to the guest profile picture
-            filename = "magnus.png"
-        # This will get the files url from the get_file() function
-        file_url = url_for("get_file", filename=filename)
+            # This executes an SQL stament which adds the users registry information to the database
+            cur.execute("INSERT INTO Account (username, password, profile_picture, permission_level, display_name) VALUES (?, ?, ?, 1, ?)", (name, hashed_password, file_url, name))
+            con.commit()
 
-        # This executes an SQL stament which adds the users registry information to the database
-        cur.execute("INSERT INTO Account (username, password, profile_picture, permission_level, display_name) VALUES (?, ?, ?, 1, ?)", (name, hashed_password, file_url, name))
-        con.commit()
+            session["user_id"] = cur.lastrowid # Auto logs in by getting the id of the last inserted row
+            return redirect(url_for("home"))
+        except sqlite3.IntegrityError:
+            form.name.errors.append("That username is already taken")
 
-        session["user_id"] = cur.lastrowid # Auto logs in by getting the id of the last inserted row
-        return redirect(url_for("home"))
     return render_template("register.html", form=form, header="Register")
 
 
