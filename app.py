@@ -127,10 +127,11 @@ def map():
     types = get_route_types()
     locations = get_locations()
     settings = get_settings()
+    routes = get_routes()
 
     print(locations)
 
-    return render_template("map.html", header="Map", markers=markers, types=types, locations=locations, settings=settings, errors=[])
+    return render_template("map.html", header="Map", markers=markers, types=types, locations=locations, settings=settings, climb_routes=routes)
 
 
 def get_map_info():
@@ -176,6 +177,20 @@ def get_locations():
     return locations
 
 
+def get_routes():
+    con = sqlite3.connect("climbing.db")
+    cur = con.cursor()
+
+    cur.execute("SELECT name FROM Route WHERE pending = 0;")
+    results = cur.fetchall()
+
+    routes = []
+    for route in results:
+        routes.append(route[0]) 
+
+    return routes
+
+
 def get_settings():
     con = sqlite3.connect("climbing.db")
     cur = con.cursor()
@@ -193,6 +208,8 @@ def map_location(name):
 
     con = sqlite3.connect("climbing.db")
     cur = con.cursor()
+
+    routes = get_routes()
 
     # Executes a query to join the Route_Type bridging table, and uses the current routes id
     cur.execute("""SELECT Location.name, Route.id, Route.name, Location.image FROM Location
@@ -215,7 +232,7 @@ def map_location(name):
             # Sets the key to the route id, and then the value is a list with the name and slugified name
             info[1][route_id] = [route_name, slugify(route_name)]
 
-    return render_template("location.html", header="Map", info=info, types=types)
+    return render_template("location.html", header="Map", info=info, types=types, climb_routes=routes)
 
 
 @app.route("/map/<string:location>/<string:name>")
@@ -251,16 +268,7 @@ def map_route(location, name):
 
 @app.route("/map/add-route", methods=["GET", "POST"])
 def add_route():
-    errors = {"name": [],
-              "grade": [],
-              "bolts": [],
-              "location": [],
-              "types": []
-              }
-
     location_name = request.form.get("location")
-    if location_name not in get_locations():
-        errors["location"].append("Location not found")
     
     current_url = request.form.get("url")
     con = sqlite3.connect("climbing.db")

@@ -16,33 +16,21 @@
                     <label for="name">Route Name</label>
                     <input type="text" id="name" name="name" required> 
 
-                    {% if errors["name"] != [] %} <!-- Displays the fields potential errors -->
-                        {% for error in errors["name"] %}
-                            <div class="form-error">{{ error }}</div>
-                        {% endfor %}
-                    {% endif %}
+                    <div class="form-error name-errors" style="display: none;"></div> <!-- Div which will display route name errors -->
                 </div>
 
                 <div class="form-group">
                     <label for="grade">Grade</label>
                     <input type="text" id="grade" name="grade" required>
                     
-                    {% if errors["grade"] != [] %} <!-- Displays the fields potential errors -->
-                        {% for error in errors["grade"] %}
-                            <div class="form-error">{{ error }}</div>
-                        {% endfor %}
-                    {% endif %}
+                    <div class="form-error grade-errors" style="display: none;"></div> <!-- Div which will display grade errors -->
                 </div>
                 
                 <div class="form-group">
                     <label for="bolts">Amount of Bolts</label>
-                    <input type="text" name="bolts" id="bolts"> 
+                    <input type="text" name="bolts" id="bolts" value="0" min="0"> 
 
-                    {% if errors["bolts"] != [] %} <!-- Displays the fields potential errors -->
-                        {% for error in errors["grade"] %}
-                            <div class="form-error">{{ error }}</div>
-                        {% endfor %}
-                    {% endif %}
+                    <div class="form-error bolts-errors" style="display: none;"></div> <!-- Div which will display bolts errors -->
                 </div>
                 
                 <div class="form-group">
@@ -52,11 +40,7 @@
                         <ul class="suggestions" id="locations"></ul> 
                     </div> <!-- Creates the input field and search bar for locations, first having a text input field, and then using suggestions as a list which will display search suggestions. -->
 
-                    {% if errors["location"] != [] %} <!-- Displays the fields potential errors -->
-                        {% for error in errors["location"] %}
-                            <div class="form-error">{{ error }}</div>
-                        {% endfor %}
-                    {% endif %}
+                    <div class="form-error location-errors" style="display: none;"></div> <!-- Div which will display location errors -->
                 </div>
 
                 <input type="hidden" name="url" id="url" value="{{ request.full_path }}"> <!-- Gets the current url route-->
@@ -64,13 +48,15 @@
                 <div class="form-group">
                     <label for="types">Types</label>
                     <div class="dropdown">
-                        <button type="button select-button" class="button">Select Types</button>
+                        <button type="button" class="button">Select Types</button>
                         <div class="dropdown-content">
                             {% for type in types %}
                                <label><input type="checkbox" name="types[]" value="{{type[0]}}">{{type[1]}}</label>
                             {% endfor %}
                         </div> <!-- Types goes through all given types and adds them to the multiselect dropdown. -->
                     </div>
+
+                    <div class="form-error types-errors" style="display: none;"></div> <!-- Div which will display types errors -->
                 </div>
                 
                 <div class="form-group">
@@ -117,7 +103,12 @@
         </div>
     </div>
 
+    <script>
+        locs = {{ locations|tojson }};
+        const routes = {{ climb_routes|tojson }};
+    </script>
     <script src="/static/js/preview.js"></script>
+    <script src="/static/js/add_route_errors.js"></script>
 
     <script> // Script for location search bar
         const locs = {{ locations|tojson }} // Gets location info
@@ -140,6 +131,7 @@
             li.addEventListener("click", () => {
                 input.value = match;
                 suggestions.innerHTML = "";
+                validateLocation(); // Revalidates location
             });
             suggestions.appendChild(li);
         }); // For each match it will create a list element and allow the user to click on it to set that to the inputs value

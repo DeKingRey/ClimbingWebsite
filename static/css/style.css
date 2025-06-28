@@ -170,6 +170,12 @@ input:focus, select:focus {
     text-align: center;
 } /* Styles the errors to make them appear with the field */
 
+/* Invalid class for error input fields, making their border red*/
+.invalid {
+    border-color: red; 
+    display: block;
+}
+
 /* #endregion */
 
 
@@ -390,11 +396,11 @@ label.button {
     z-index: 1;
 }
 
-.dropdown:hover .dropdown-content {
-    display: block;
+.dropdown-content label input[type="checkbox"] {
+    margin-top: 6px;
 }
 
-.dropdown-content label {
+.dropdown:hover .dropdown-content {
     display: block;
 }
 /* #endregion*/
