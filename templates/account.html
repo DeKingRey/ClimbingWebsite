@@ -1,9 +1,9 @@
 {% extends 'layout.html' %}
 {% block content %}
     {% if username %}
-        <form action="/account" method="POST">
+        <form action="/account" method="POST" class="center-form">
             <div class="account-info-container">
-                <div class="left-align" style="text-align: left; display: inline-block;">
+                <div>
                     <h2>Account Info</h2>
                     <div class="divider"></div>
                 </div>
@@ -11,14 +11,77 @@
             </div>
             
             <!-- Account info -->
-            <p><strong>Username</strong> - {{ username }}</p>
-            <p><strong>Display Name</strong> - {{ display_name }}</p>
-            <p><strong>Profile Picture</strong>
-                <img src="{{ profile_picture }}" alt="profile picture" class="profile-preview" style="margin: 20px 0;"></p>
-            
+            <div class="account-info">
+                <img src="{{ profile_picture }}" alt="profile picture" class="profile-preview">
+                <h2 style="margin: 0 auto;"><strong>{{display_name}}</strong></h2>
+                <h4 style="margin: 0 auto; font-size: 20px;">{{username}}</h4>
+                <h4 style="margin: 0 auto; font-size: 17px; margin-bottom: 30px;">Joined: {{date}}</h4>
+            </div>
+
+            <!-- The different account infos to display, a row of buttons that call a js function to show their section -->
+            <div class="button-row">
+                <button class="button selected" type="button" onclick="showSection('climbs', this)">Logged Climbs</button>
+                <button class="button" type="button" onclick="showSection('favourites', this)">Favourites</button>
+                <button class="button" type="button" onclick="showSection('events', this)">Event Results</button>
+            </div>
+
+            <!-- The sections divs which will hold the info -->
+            <div class="account-section logged-routes-container" id="climbs">
+                {% for route in routes %} <!-- Loops through every logged route and displays their info in rows -->
+                    <div class="logged-route">
+                        <p>{{route[0]}}</p> <!-- The route name -->
+
+                    <div class="rating-box">
+                        <div class="stars account-stars" data-rating="{{ route[1] }}"> <!-- Data rating can be accessed in js -->
+                            {% for i in  range(1, 6) %} <!-- Makes an image of every star -->
+                                <label for="star{{i}}">
+                                    <i class="fa-solid fa-star"></i>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                        <p>{{route[2]}}</p> <!-- The logging date -->
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="account-section" id="favourites" style="display: none;">Coming soon</div>
+            <div class="account-section" id="events" style="display: none;">Now coming soon</div>
 
             <button type="submit" name="action" value="logout" class="button" style="margin-top: 30px; font-size: 25px">Logout</button>
         </form>     <!-- If username is given(aka the user is logged in) the logout button will display on the account page. -->
+
+        <!-- Select section script -->
+        <script>
+            function showSection(sectionId, button) { // Function taking in the id of the button
+                const sections = document.querySelectorAll(".account-section"); // Gets all account sections
+                sections.forEach(section => section.style.display = "none"); // Sets each sections display to none
+
+                const selected = document.getElementById(sectionId); // Gets the selected div by using the buttons id
+                selected.style.display = "block"; // Sets the div display to block(not none)
+                
+                // Removes selected class from all buttons
+                const buttons = document.querySelectorAll("button");
+                buttons.forEach(btn => btn.classList.remove("selected"));
+
+                // Adds selected class to clicked button
+                button.classList.add("selected");
+            }
+        </script>
+
+        <!-- Star rating script -->
+        <script>
+            document.querySelectorAll(".stars").forEach(starSet => { // Loops through every set of stars
+                const stars = starSet.querySelectorAll("i"); // Gets all stars in the set
+                const rating = parseInt(starSet.dataset.rating); // Gets the rating from the dataset
+
+                stars.forEach((star, index) => { 
+                    if (index < rating) { // Checks if index is less than rating
+                        star.classList.add("active"); // Adds the active class
+                    }
+                });
+            });
+        </script>
     {% else %}
         <h3>You are not logged in. <a href="/login">Log in here</a> Or <a href="/register">Register here</a>  if you don't have an account.</h3>     <!-- Otherwise provides the login and register pages. -->
     {% endif %}

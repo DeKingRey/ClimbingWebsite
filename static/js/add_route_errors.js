@@ -15,6 +15,8 @@ function validateName() {
         errorDiv.textContent = "Route name required"; // Checks if value is empty(false), if not error div is empty
         errorDiv.style.display = "block"; // Div becomes visible
         nameInput.classList.add("invalid");
+
+        return false;
     }
 
     const exists = routes.includes(value);

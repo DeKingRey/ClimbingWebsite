@@ -34,7 +34,7 @@
                     </div>
                 </div> <br><br>
 
-                <button type="submit" class="button">Publish</button>
+                <button type="submit" class="button">Log</button>
                 <button class="button">Create Post</button>
             </form>
             <button data-popup-close class="button">Close</button>
@@ -49,7 +49,7 @@
             const month = String(date.getMonth() + 1).padStart(2, "0"); // Gets the month and its proper index, then in case its a 1 digit month it makes sure that there are 2 digits and it starts with 0(if needed)
             const day = String(date.getDate()).padStart(2, "0");
             
-            const formattedDate = `${year}-${month}-${day}`; // Format of YYYY-MM-DD
+            const formattedDate = `${day}-${month}-${year}`; // Format of YYYY-MM-DD
 
             document.getElementById("local_date").value = formattedDate; // Sets the local date value to the current date
         });

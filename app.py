@@ -82,6 +82,7 @@ class RegisterForm(FlaskForm):
 map_routes_url = "https://climbnz.org.nz/api/routes"
 
 
+# These variables will be able to be accessed on every render template instead of manually inputting in every render
 @app.context_processor
 def inject_user():
     return {
@@ -89,6 +90,7 @@ def inject_user():
         "profile_picture": session.get("profile_picture"),
         "permission_level": session.get("permission_level"),
         "display_name": session.get("display_name"),
+        "date": session.get("date"),
     }
 
 
@@ -97,24 +99,29 @@ def home():
     user_id = session.get("user_id")
     
     if user_id is not None:
+        # Gets accounts info when logging in
         con = sqlite3.connect("climbing.db")
         cur = con.cursor()
-        cur.execute("SELECT profile_picture, username, permission_level, display_name FROM Account WHERE id = ?", (user_id,))
+        cur.execute("SELECT profile_picture, username, permission_level, display_name, date FROM Account WHERE id = ?", (user_id,))
         result = cur.fetchone()
         profile_picture = result[0]
         username = result[1]
         permission_level = result[2]
         display_name = result[3]
+        date = result[4]
 
+        # Sets all session variables
         session["profile_picture"] = profile_picture
         session["username"] = username
         session["permission_level"] = permission_level
         session["display_name"] = display_name
+        session["date"] = date
     else:
         profile_picture = None
         username = None
         permission_level = 0
         display_name = None
+        date = None
 
     return render_template("home.html", header="Home")
     
@@ -345,6 +352,11 @@ def posts():
     return render_template("posts.html", header="Posts")
 
 
+@app.route("/events", methods=["GET", "POST"])
+def events():
+    return render_template("events.html", header="Events")
+
+
 @app.route("/admin")
 def admin():
     con = sqlite3.connect("climbing.db")
@@ -401,16 +413,34 @@ def process_submissions():
 
 @app.route("/account", methods=["GET", "POST"])
 def account():
+    routes = None
+    if session.get("user_id"): # Makes sure the user is logged in
+        routes = get_logged_routes()
+
     if request.method == "POST":
-        action = request.form.get("action")
+        action = request.form.get("action") # Gets the action of the form
 
         if action == "edit":
-            return redirect(url_for("edit_account"))
+            return redirect(url_for("edit_account")) # R    edirects to edit if edit button is pressed
 
         if action == "logout":
             logout()
-            return redirect(url_for("home"))
-    return render_template("account.html", header="Account")
+            return redirect(url_for("home")) # Logs out and goes to home if logout is pressed
+    return render_template("account.html", header="Account", routes=routes)
+
+
+def get_logged_routes():
+    con = sqlite3.connect("climbing.db")
+    cur = con.cursor()
+
+    # Gets the logged routes info for the current account
+    cur.execute("""SELECT Route.name, Account_Route.rating, Account_Route.date
+                FROM Account_Route
+                JOIN Route ON Account_Route.route_id = Route.id
+                WHERE Account_Route.account_id = ?;
+                """, (session.get("user_id"),))
+
+    return cur.fetchall()
 
 
 @app.route("/edit_account", methods=["GET", "POST"])
@@ -488,20 +518,21 @@ def register():
     con = sqlite3.connect("climbing.db")
     cur = con.cursor()
     
-    form = RegisterForm()
+    wtf_form = RegisterForm()
 
-    if form.validate_on_submit():
-        name = form.name.data
-        password = form.password.data
+    if wtf_form.validate_on_submit():
+        name = wtf_form.name.data
+        password = wtf_form.password.data
+        date = request.form.get("local_date")
         
         # This hashes the password making it secure and able to be stored in a database. Hashed things cannot be unhashed so it is quite secure
         hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
         
         try:
             # This saves the photos file in the uploads folder
-            if form.photo.data != None:
+            if wtf_form.photo.data != None:
                 # This saves the file in the uploads folder and gets the filename
-                filename = photos.save(form.photo.data)
+                filename = photos.save(wtf_form.photo.data)
             else:
                 # Guest Profile Picture
                 # If there is no photo input then the users profile picture will be set to the guest profile picture
@@ -510,15 +541,15 @@ def register():
             file_url = url_for("get_file", filename=filename)
 
             # This executes an SQL stament which adds the users registry information to the database
-            cur.execute("INSERT INTO Account (username, password, profile_picture, permission_level, display_name) VALUES (?, ?, ?, 1, ?)", (name, hashed_password, file_url, name))
+            cur.execute("INSERT INTO Account (username, password, profile_picture, permission_level, display_name, date) VALUES (?, ?, ?, 1, ?, ?)", (name, hashed_password, file_url, name, date))
             con.commit()
 
             session["user_id"] = cur.lastrowid # Auto logs in by getting the id of the last inserted row
             return redirect(url_for("home"))
         except sqlite3.IntegrityError:
-            form.name.errors.append("That username is already taken")
+            wtf_form.name.errors.append("That username is already taken")
 
-    return render_template("register.html", form=form, header="Register")
+    return render_template("register.html", form=wtf_form, header="Register")
 
 
 @app.route("/uploads/<filename>")
@@ -567,6 +598,7 @@ def logout():
     session["username"] = None
     session["permission_level"] = None
     session["display_name"] = None
+    session["date"] = None
 
 
 if __name__ == "__main__":

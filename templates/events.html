@@ -1,0 +1,8 @@
+{% extends 'layout.html' %}
+{% block content %}
+    
+    {% for event in events %}
+        <p>{{event[1]}}</p>
+    {% endfor %} <!-- Every event will be displayed here. -->
+
+{% endblock %}

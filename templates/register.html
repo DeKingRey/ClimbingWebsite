@@ -1,9 +1,10 @@
 {% extends 'layout.html' %}
 {% block content %} 
     <!-- Form to register a new account -->
-    <h2>Register</h2>
     <!-- The 'encytype' allows you to send files through the form -->
-    <form method="POST"  enctype="multipart/form-data">
+    <form method="POST"  enctype="multipart/form-data" class="center-form">
+        <h2>Register</h2>
+        <div class="divider"></div>
         <!-- The hidden_tag() function protects against malicious servers using the users information by creating a hidden CSRF token which will only make uploads valid on the trusted website. CSRF: Cross site request forgery -->
         {{ form.hidden_tag() }}
         
@@ -53,6 +54,8 @@
 
                 <img src="#" alt="Image Preview" id="photo-preview" class="photo-preview profile-preview">
             </div>
+
+            <input type="hidden" name="local_date" id="local_date">
             
             <!-- Submit button -->
             <div class="form-group" style="width: 60%">
@@ -61,4 +64,17 @@
         </div>
     </form>
     <script src="/static/js/preview.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function(){ // Executes code when the HTML has loaded
+            const date = new Date(); // New date based on local time from the users device
+            const year = date.getFullYear(); // Gets just the year
+            const month = String(date.getMonth() + 1).padStart(2, "0"); // Gets the month and its proper index, then in case its a 1 digit month it makes sure that there are 2 digits and it starts with 0(if needed)
+            const day = String(date.getDate()).padStart(2, "0");
+            
+            const formattedDate = `${day}-${month}-${year}`; // Format of YYYY-MM-DD
+
+            document.getElementById("local_date").value = formattedDate; // Sets the local date value to the current date
+        });
+    </script>
 {% endblock %}

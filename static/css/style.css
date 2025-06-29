@@ -66,7 +66,7 @@ h4 {
     height: 6px;
     width: 100px;
     background-color: var(--color-mustard);
-    margin: 30px auto;
+    margin: 20px auto;
     border-radius: 5px;
 } /* Divider class to create a divider between headings and content */
 
@@ -84,7 +84,7 @@ footer {
 
 form {
     max-width: 600px;
-    margin: 0;
+    margin: 0 auto;
     text-align: left;
 }
 
@@ -487,6 +487,16 @@ label.button {
 } /* This is for the stars themselves giving them a transition and functionality for when they are clicked*/
 /* #endregion */
 
+.account-stars i {
+    color: #b99d42; 
+    cursor: default;
+}
+
+.account-stars i.active {
+    color: var(--color-gold);
+    text-shadow: 0 0 5px #a2831d;
+} /* Creates a fake border with shadow around the star*/
+
 /* #region Location Page */
 
 /* Location Image */
@@ -636,7 +646,7 @@ isn't clicked*/
 .account-info-container {
     position: relative;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     margin-bottom: 20px;
 } /* Positions the header container making it a flexbox to properly position the edit button */
 
@@ -665,5 +675,69 @@ isn't clicked*/
     background-color: var(--color-mustard);
     transform: translateY(-2px);
 } /* Changes the background color when hovered over*/
+
+.center-form {
+    text-align: center;
+    padding: 20px;
+    background-color: #fdfdf8;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin: 40px auto;
+} /* Puts the account info into a box */
+
+.account-info .profile-preview {
+    display: block;
+    margin: 0 auto 20px auto; /* Centers the profile pic horizontally */
+}
+
+.button-row {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 0 auto;
+}
+
+.button-row .button.selected {
+    border: 3px solid #a2831d;
+} /* Displays the buttons in a row and add a border when selected*/
+
+.account-section {
+    margin-top: 10px;
+    background-color: #fffbea;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+} /* Box for the account section */
+
+/* #endregion */
+
+/* #region Logged Routes Section*/
+
+.logged-routes-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.logged-route {
+    display: flex;
+    justify-content: space-between; /* Justifies content evenly across the div */
+    align-items: center; 
+    background-color: var(--color-sunshine);
+    padding: 10px 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); 
+} /* Styles the logged route div making it a styled box */
+
+.logged-route p {
+    flex: 1;
+    margin: 0;
+    text-align: center;
+    font-size: 1.3rem;
+    color: var(--color-charcoal);
+} /* Properly positions and styles the text */
 
 /* #endregion */
