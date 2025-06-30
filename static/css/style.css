@@ -4,6 +4,7 @@
     --color-gold: #F7D327;
     --color-mustard: #D0A823;
     --color-charcoal: #504C41;
+    --color-papyrus: #FFFBEA;
 } /* Sets my primary colour palette names*/
 
 /* Sets the font of all text to roboto*/
@@ -373,6 +374,7 @@ label.button {
     width: 50%;
 }
 
+
 /* #region Dropdown*/
 /* Styles a dropdown and its content, specifically for a multiselect form field. */
 .dropdown {
@@ -404,6 +406,7 @@ label.button {
     display: block;
 }
 /* #endregion*/
+
 
 /* #region Search Bar */
 
@@ -452,6 +455,7 @@ label.button {
 
 /* #endregion */
 
+
 /* #region Star Rating*/
 .rating-box {
     display: flex;
@@ -485,7 +489,6 @@ label.button {
 .stars i.active {
     color: #ff9c1a;
 } /* This is for the stars themselves giving them a transition and functionality for when they are clicked*/
-/* #endregion */
 
 .account-stars i {
     color: #b99d42; 
@@ -496,6 +499,9 @@ label.button {
     color: var(--color-gold);
     text-shadow: 0 0 5px #a2831d;
 } /* Creates a fake border with shadow around the star*/
+
+/* #endregion */
+
 
 /* #region Location Page */
 
@@ -641,6 +647,7 @@ isn't clicked*/
 
 /* #endregion */
 
+
 /* #region Account Page */
 
 .account-info-container {
@@ -703,7 +710,7 @@ isn't clicked*/
 
 .account-section {
     margin-top: 10px;
-    background-color: #fffbea;
+    background-color: var(--color-papyrus);
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -711,6 +718,7 @@ isn't clicked*/
 } /* Box for the account section */
 
 /* #endregion */
+
 
 /* #region Logged Routes Section*/
 
@@ -739,5 +747,88 @@ isn't clicked*/
     font-size: 1.3rem;
     color: var(--color-charcoal);
 } /* Properly positions and styles the text */
+
+/* #endregion */
+
+
+/* #region Event Page */
+
+.event-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    justify-content: center;
+    padding: 40px;
+} /* Displays the elements in a grid like format */
+
+.event {
+    flex: 1 1 calc(33.333% - 80px); /* 3 Per row making sure to compensate for gaps */
+    box-sizing: border-box;
+
+    background-color: var(--color-papyrus);
+    border-radius: 16px;
+    padding: 30px;
+    margin: 40px auto;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); /* Adds a shadow */
+    max-width: 400px;
+    display: flex;
+    flex-direction: column; /* Displays the event divs in a column like structure */
+    gap: 20px; /* Gives the column element a 20px gap before the next one */
+}
+
+@media (max-width: 1100px) {
+    .event {
+        flex: 1 1 calc(50% - 80px);
+    }
+}
+
+@media (max-width: 700px) {
+    .event {
+        flex: 1 1 100%;
+    }
+}
+
+.event h4 {
+    font-size: 2.2rem;
+    margin: 10px 0;
+    font-weight: 700;
+    text-align: center;
+} /* Styles the event name heading */
+
+.event-top-info {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    font-size: 1.5rem;
+    color: #555;
+}
+
+.event img {
+    max-width: 300px;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+} /* Styles the image to have the correct size  */
+
+.event-body {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+} /* Properly positions things within the information body */
+
+.event-info {
+    text-align: center;
+    font-size: 1.6rem;
+    color: var(--color-charcoal);
+    max-width: 600px;
+} /* Styles the event info div */
+
+.event-info .description {
+    font-size: 1.5rem;
+    line-height: 1.5;
+    margin-top: 15px;
+} /* Style for description */
 
 /* #endregion */

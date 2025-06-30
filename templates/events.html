@@ -1,8 +1,27 @@
 {% extends 'layout.html' %}
 {% block content %}
     
-    {% for event in events %}
-        <p>{{event[1]}}</p>
-    {% endfor %} <!-- Every event will be displayed here. -->
+    <div class="event-grid">
+        {% for event in events %}
+            <div class="event"> <!-- The div that displays the events info -->
+                <div class="event-top-info">
+                    <div>{{ event["post_date"] }}</div>
+                    <div>Created by {{ event["display_name"] }}</div>
+                </div>
+
+                <h4>{{ event["name"] }}</h4>
+
+                <div class="event-body">
+                    <img src="{{ event['image' ]}}" alt="Event image">
+
+                    <div class="event-info">
+                        <p>Date - <strong>{{ event["event_date"] }}</strong></p>
+                        <p>Location - <strong>{{ event["location_name"] }}</strong></p>
+                        <p class="description">{{ event["description"] }}</p>
+                    </div>
+                </div>
+            </div>
+        {% endfor %} <!-- Every event will be displayed here. -->
+    </div>
 
 {% endblock %}

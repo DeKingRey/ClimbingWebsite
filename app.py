@@ -354,7 +354,21 @@ def posts():
 
 @app.route("/events", methods=["GET", "POST"])
 def events():
-    return render_template("events.html", header="Events")
+    con = sqlite3.connect("climbing.db")
+    con.row_factory = sqlite3.Row # Returns results as a dictionary or a tuple that can be indexed, I will use as a dict for easier indexing so instead of event[9] for image(or whatever index it is) I can simply do event["image"]
+
+    cur = con.cursor()
+    # Query gets all events info
+    cur.execute("""SELECT Event.id, Event.name, post_date, event_date, Event.description, 
+                Location.name AS location_name, Account.display_name, Event.time, Event.pending, Event.image
+                FROM Event
+                JOIN Location ON Event.location_id = Location.id
+                JOIN Account ON Event.account_id = Account.id
+                WHERE Event.pending = 0;""")
+    events = cur.fetchall()
+    print(events)
+
+    return render_template("events.html", header="Events", events=events)
 
 
 @app.route("/admin")
