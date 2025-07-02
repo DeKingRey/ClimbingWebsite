@@ -27,7 +27,7 @@
 
             <!-- The sections divs which will hold the info -->
             <div class="account-section logged-routes-container" id="climbs">
-                {% for route in routes %} <!-- Loops through every logged route and displays their info in rows -->
+                {% for route in routes|reverse %} <!-- Loops through every logged route in reverse and displays their info in rows -->
                     <div class="logged-route">
                         <p>{{route[0]}}</p> <!-- The route name -->
 
@@ -45,8 +45,20 @@
                     </div>
                 {% endfor %}
             </div>
-            <div class="account-section" id="favourites" style="display: none;">Coming soon</div>
-            <div class="account-section" id="events" style="display: none;">Now coming soon</div>
+            <div class="account-section" id="favourites" style="display: none;">
+                Coming soon
+            </div>
+            <div class="account-section joined-events-account" id="events" style="display: none;">
+                <!-- Displays all upcoming events, based on most soon -->
+                {% for event in events %}
+                    <div class="account-event">
+                        <p>{{ event["name"] }}</p>
+                        
+                    </div>
+                {% endfor %}
+
+                <!-- For loop will be added for completed events-->
+            </div>
 
             <button type="submit" name="action" value="logout" class="button" style="margin-top: 30px; font-size: 25px">Logout</button>
         </form>     <!-- If username is given(aka the user is logged in) the logout button will display on the account page. -->

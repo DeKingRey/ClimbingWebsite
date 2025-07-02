@@ -7,10 +7,11 @@
     {% if locations %}
         <div class="pending-submissions">
             {% for location in locations %}
+                <!-- Div for the header of the which has the button to see more info on the route-->
                 <div class="pending-header">
                     <h4>{{location[1]}}</h4> <!-- Location name -->
                     <button class="toggle-button" onclick="toggleInfo(this)">></button>
-                </div> <!-- Div for the header of the which has the button to see more info on the route-->
+                </div>
 
                 <div class="extra-info">
                     <p>Coordinates: <a href="https://www.google.com/maps?q={{location[2]}}" target="blank">Google maps coordinates</a></p> <!-- A link leading to the coordinates which opens google maps on a new tab -->
@@ -19,12 +20,16 @@
                     <div class="location-image-container" style="margin-bottom:20px;">
                         <img src="{{location[4]}}" alt="location-image" class="location-image">
                     </div>
+                    
+                    <!-- This form handles denying and approving submissions-->
                     <form action="{{ url_for('process_submissions') }} " method="POST" style="display: inline;">
                         <input type="hidden" name="id" value="{{ location[0] }}"> <!-- The id of the route/location -->
                         <input type="hidden" name="type" value="Location"> <!-- The type of submission it is so flask can identify what to submit -->
+
+                        <!-- Approve and deny buttons -->
                         <button type="submit" name="action" value="approve" class="approve-button">Approve</button>
                         <button type="submit" name="action" value="deny" class="deny-button">Deny</button>
-                    </form> <!-- This form handles denying and approving submissions-->
+                    </form>
                 </div> <!-- Displays the information on the route and allows the admin to approve it or not-->
             {% endfor %}
         </div>

@@ -612,7 +612,7 @@ isn't clicked*/
     margin-left: 30px;
 } /* Styles the content making the header and button align, and pushing the routes to the right */
 
-.approve-button {
+.approve-button, .join-button {
     background-color: #28a745;
     font-size: 20px;
     color: white;
@@ -629,7 +629,7 @@ isn't clicked*/
     background-color: #218838; /* darker green */
 } /* Styles the approve button making it green and transition to darker green when hovered over */
 
-.deny-button {
+.deny-button, .leave-button {
     background-color: #dc3545;
     font-size: 20px;
     color: white;
@@ -803,32 +803,40 @@ isn't clicked*/
     color: #555;
 }
 
+/* Styles the image to have the correct size  */
 .event img {
     max-width: 300px;
     max-height: 300px;
     object-fit: cover;
     border-radius: 12px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-} /* Styles the image to have the correct size  */
+}
 
 .event-body {
     display: flex;
     flex-direction: column;
     gap: 15px;
     align-items: center;
+    height: 100%;
 } /* Properly positions things within the information body */
 
+/* Styles the event info div */
 .event-info {
     text-align: center;
     font-size: 1.6rem;
     color: var(--color-charcoal);
     max-width: 600px;
-} /* Styles the event info div */
 
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Style for description */
 .event-info .description {
     font-size: 1.5rem;
     line-height: 1.5;
     margin-top: 15px;
-} /* Style for description */
+}
 
 /* #endregion */

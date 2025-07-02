@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-from flask import Flask, render_template, redirect, url_for, send_from_directory, request, session
+from flask import Flask, render_template, redirect, url_for, send_from_directory, request, session, jsonify
 
 from flask_bcrypt import Bcrypt, check_password_hash
 from flask_uploads import UploadSet, IMAGES, configure_uploads
@@ -359,16 +359,68 @@ def events():
 
     cur = con.cursor()
     # Query gets all events info
-    cur.execute("""SELECT Event.id, Event.name, post_date, event_date, Event.description, 
-                Location.name AS location_name, Account.display_name, Event.time, Event.pending, Event.image
+    cur.execute("""SELECT Event.id, Event.name, post_date, start_date, end_date, Event.description, 
+                Location.name AS location_name, Account.display_name, start_time, end_time, Event.pending, Event.image
                 FROM Event
                 JOIN Location ON Event.location_id = Location.id
                 JOIN Account ON Event.account_id = Account.id
                 WHERE Event.pending = 0;""")
     events = cur.fetchall()
-    print(events)
+
+    # Sets joined events to none as it will only be needed if the user is logged in
+    joined_events_ids = set() # Sets don't have duplicates
+    if session.get("user_id"):
+        user_id = session.get("user_id")      
+
+        # Gets every event the user has joined
+        cur.execute("SELECT event_id FROM Account_Event WHERE account_id = ?;", (user_id,))
+        # Adds every event id from the query to the set
+        joined_events_ids = {row["event_id"] for row in cur.fetchall()}
+
+    # Converts the events sql dict into a python array of dicts so I can add values
+    events = [dict(event) for event in events]
+    # Adds a joined key to the events dict where every event in the joined events set is added 
+    for event in events:
+        event["joined"] = event["id"] in joined_events_ids # Joined is a bool depending if the event id is in the joined events set
+
+    con.close()
 
     return render_template("events.html", header="Events", events=events)
+
+
+@app.route("/event-action", methods=["POST"])
+def event_action():
+    # This will handle the functionality of the buttons on each event
+
+    # Gets all the values
+    action = request.form.get("action") # Gets the buttons action
+    account_id = session.get("user_id")
+    event_id = request.form.get("event_id")
+
+    if not account_id:
+        return jsonify({"status": "login"}) # Passes the json to login if account id isn't found
+    
+    con = sqlite3.connect("climbing.db")
+    cur = con.cursor()
+
+    if action == "join":
+        try:
+            # Inserts the values into the account_event bridging table
+            cur.execute("INSERT INTO Account_Event (account_id, event_id) VALUES (?, ?)", (account_id, event_id,))
+            con.commit()
+            status = "joined"
+        except sqlite3.IntegrityError: # In case the user has already joined the event
+            pass
+    elif action == "leave":
+        # Deletes the user from the event they joined
+        cur.execute("DELETE FROM Account_Event WHERE account_id = ? AND event_id = ?;", (account_id, event_id,))
+        con.commit()
+        status = "left"
+    else:
+        status = "error" # Error if anything else
+
+    con.close()
+    return jsonify({"status": status}) # Returns the status for JS
 
 
 @app.route("/admin")
@@ -428,8 +480,10 @@ def process_submissions():
 @app.route("/account", methods=["GET", "POST"])
 def account():
     routes = None
+    events = None
     if session.get("user_id"): # Makes sure the user is logged in
         routes = get_logged_routes()
+        events = get_joined_events()
 
     if request.method == "POST":
         action = request.form.get("action") # Gets the action of the form
@@ -440,7 +494,7 @@ def account():
         if action == "logout":
             logout()
             return redirect(url_for("home")) # Logs out and goes to home if logout is pressed
-    return render_template("account.html", header="Account", routes=routes)
+    return render_template("account.html", header="Account", routes=routes, events=events)
 
 
 def get_logged_routes():
@@ -453,8 +507,27 @@ def get_logged_routes():
                 JOIN Route ON Account_Route.route_id = Route.id
                 WHERE Account_Route.account_id = ?;
                 """, (session.get("user_id"),))
+    results = cur.fetchall()
+    con.close()
 
-    return cur.fetchall()
+    return results
+
+
+def get_joined_events():
+    con = sqlite3.connect("climbing.db")
+    con.row_factory = sqlite3.Row # Turns the results into a table for easier access of values
+    cur = con.cursor()
+    
+    # Gets relevant event info and user results 
+    cur.execute("""SELECT e.id, e.name, e.start_date, end_date, start_time, end_time, e.complete, ae.placing, ae.time
+                FROM Account_Event ae
+                JOIN Event e ON ae.event_id = e.id
+                WHERE ae.account_id = ?
+                """, (session.get("user_id"),))
+    results = cur.fetchall()
+    con.close()
+
+    return results
 
 
 @app.route("/edit_account", methods=["GET", "POST"])
