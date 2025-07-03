@@ -19,6 +19,8 @@
                     <!-- Holds all the main info for the event -->
                     <div class="event-info"> 
                         <p><strong>{{ event["start_date"] }}</strong> to <strong>{{ event["end_date"] }}</strong></p>
+                        <div class="countdown" id="countdown">Loading...</div>
+                        <div class="event-status" id="eventStatus">Loading...</div>
                         <p><strong>{{ event["location_name"] }}</strong></p>
                         <p class="description" >{{ event["description"] }}</p>
                         
@@ -106,6 +108,8 @@
                 attachButtonListeners(form); // Attatches button listeners
             });
         </script>
+
+        <script src="/static/js/time_remaining.js"></script>
     </div>
 
 {% endblock %}
