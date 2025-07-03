@@ -53,6 +53,8 @@
                 {% for event in events %}
                     <div class="account-event">
                         <p>{{ event["name"] }}</p>
+                        <div class="countdown" id="countdown-{{ event['id'] }}">Loading...</div>
+                        <div class="event-status" id="event-status-{{ event['id'] }}">Loading...</div>
                         
                     </div>
                 {% endfor %}
@@ -94,6 +96,12 @@
                 });
             });
         </script>
+
+        <!-- Event countdown scripts -->
+        <script>
+            const events_info = {{ events | tojson }};
+        </script>
+        <script src="/static/js/time_remaining.js"></script>
     {% else %}
         <h3>You are not logged in. <a href="/login">Log in here</a> Or <a href="/register">Register here</a>  if you don't have an account.</h3>     <!-- Otherwise provides the login and register pages. -->
     {% endif %}

@@ -519,7 +519,7 @@ def get_joined_events():
     cur = con.cursor()
     
     # Gets relevant event info and user results 
-    cur.execute("""SELECT e.id, e.name, e.start_date, end_date, start_time, end_time, e.complete, ae.placing, ae.time
+    cur.execute("""SELECT e.id, e.name, e.start_date, end_date, start_time, end_time, ae.placing, ae.time
                 FROM Account_Event ae
                 JOIN Event e ON ae.event_id = e.id
                 WHERE ae.account_id = ?
@@ -527,7 +527,7 @@ def get_joined_events():
     results = cur.fetchall()
     con.close()
 
-    return results
+    return [dict(result) for result in results]
 
 
 @app.route("/edit_account", methods=["GET", "POST"])

@@ -32,6 +32,7 @@ function parseDateTime(dateStr, timeStr) {
     return date;
 }
 
+
 // Function will get the remaining time until the date
 function getTimeRemaining(startDate) {
     const now = new Date(); // Gets the current date and time
@@ -50,33 +51,43 @@ function getTimeRemaining(startDate) {
     return { days, hours, mins, seconds };
 }
 
-const eventStatus = document.getElementById("eventStatus");
-const countdown = document.getElementById("countdown"); 
-const eventDate = parseDateTime("31-01-2026", "11:55am");
-const eventEndDate = parseDateTime("15-11-2026", "12:00am");
 
 // Function will update the countdown element
 function updateCountdown() {
-    let remaining = getTimeRemaining(eventDate); // Gets remaining time
+    // Loops through every event
+    for (const event of events_info) {
+        const id = event.id; // Gets the events id
 
-    if (!remaining) {
-        remaining = getTimeRemaining(eventEndDate); // Gets the time left until the event ends if it is ongoing
-        eventStatus.textContent = "Ongoing";
+        const countdown = document.getElementById(`countdown-${id}`);
+        const eventStatus = document.getElementById(`event-status-${id}`);
 
-        if (!remaining) { // If the event is concluded
-            eventStatus.textContent = "Concluded";
-            countdown.style.display = "none";
-            clearInterval(intervalId); // Stops the repeating of the function
-            return;
+        const startDate = parseDateTime(event.start_date, event.start_time);
+        const endDate = parseDateTime(event.end_date, event.end_time);
+
+        let remaining = getTimeRemaining(startDate); // Gets remaining time
+
+        if (!remaining) {
+            remaining = getTimeRemaining(endDate); // Gets the time left until the event ends if it is ongoing
+            eventStatus.textContent = "Ongoing";
+            eventStatus.style.backgroundColor = "#F6C646";
+
+            if (!remaining) { // If the event is concluded
+                eventStatus.textContent = "Concluded";
+                eventStatus.style.backgroundColor = "#D95C5C";
+                countdown.style.display = "none";
+                continue; // Skips event
+            }
         }
-    }
-    else {
-        eventStatus.textContent = "Upcoming";
-    }
+        else {
+            eventStatus.textContent = "Upcoming";
+            eventStatus.style.backgroundColor = "#8DC149";
+        }
 
-    const { days, hours, mins, seconds } = remaining;
-    countdown.textContent = `${days}d ${hours}h ${mins}m ${seconds}s`; // Updates countdown to display time remaining
+        const { days, hours, mins, seconds } = remaining;
+        countdown.textContent = `${days}d ${hours}h ${mins}m ${seconds}s`; // Updates countdown to display time remaining
+    }
 }
+
 
 updateCountdown();
 const intervalId = setInterval(updateCountdown, 1000); // Runs the function every second

@@ -859,11 +859,21 @@ isn't clicked*/
 
     padding: 6px 12px;
     border-radius: 6px;
-    display: inline-block;
-    margin-top: 8px;
 
     user-select: none; /* Prevents the user selecting the text */
     box-shadow: 0 0 6px rgba(217, 83, 79, 0.5);
+}
+
+/* Layout for an event status */
+.event-status {
+    font-weight: 600;
+    font-size: 1.5rem;
+    color: white;
+
+    padding: 6px 12px;
+    border-radius: 6px;
+    
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
 }
 
 /* #endregion */
