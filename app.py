@@ -382,10 +382,37 @@ def events():
     # Adds a joined key to the events dict where every event in the joined events set is added 
     for event in events:
         event["joined"] = event["id"] in joined_events_ids # Joined is a bool depending if the event id is in the joined events set
+        event["slug"] = slugify(event["name"]) # Creates a slug for the event so the name can be properly used in a link
 
     con.close()
 
     return render_template("events.html", header="Events", events=events)
+
+
+@app.route("/events/<string:event>")
+def event(event):
+    con = sqlite3.connect("climbing.db")
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+
+    id = request.args.get("id")
+
+    cur.execute("""SELECT Event.id, Event.name, post_date, start_date, end_date, Event.description, 
+                Location.name AS location_name, Account.display_name, start_time, end_time, Event.pending, Event.image
+                FROM Event
+                JOIN Location ON Event.location_id = Location.id
+                JOIN Account ON Event.account_id = Account.id
+                WHERE Event.pending = 0 AND Event.id == ?;""", (id,))
+    event = cur.fetchone()
+    
+    # Will be used to find whether the user has joined the event
+    cur.execute("SELECT event_id FROM Account_Event WHERE account_id = ? AND event_id = ?;", (session.get("user_id"), id,))
+    joined = cur.fetchall()
+
+    event = dict(event) # Turns event into an actual dict
+    event["joined"] = event["id"] in joined
+
+    return render_template("event.html", event=event)
 
 
 @app.route("/event-action", methods=["POST"])

@@ -14,6 +14,7 @@
 }
 * {
     font-family: "roboto";
+    color: var(--color-charcoal);
 }
 
 /* #region Basics */
@@ -580,6 +581,7 @@ img:hover {
 
 /* #endregion */
 
+
 /* #region Admin Page*/
 
 .extra-info {
@@ -683,7 +685,7 @@ isn't clicked*/
     transform: translateY(-2px);
 } /* Changes the background color when hovered over*/
 
-.center-form {
+.center-form, .event-info-container {
     text-align: center;
     padding: 20px;
     background-color: #fdfdf8;
@@ -862,6 +864,8 @@ isn't clicked*/
 
     user-select: none; /* Prevents the user selecting the text */
     box-shadow: 0 0 6px rgba(217, 83, 79, 0.5);
+
+    align-self: center;
 }
 
 /* Layout for an event status */

@@ -10,8 +10,6 @@ function parseDateTime(dateStr, timeStr) {
 
         if (!match) return null; // If the time is incorrectly formatted
 
-        console.log(match);
-
         let [_, hr, min, ampm] = match; // Extracts all parts of the time
         hr = parseInt(hr); // Converts to int
         min = parseInt(min);
@@ -91,5 +89,3 @@ function updateCountdown() {
 
 updateCountdown();
 const intervalId = setInterval(updateCountdown, 1000); // Runs the function every second
-
-

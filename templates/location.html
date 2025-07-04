@@ -13,11 +13,12 @@
             {% if info[1] %}
                 <h2>Routes</h2>
                 <div class="routes-list">
+                <!-- Goes through all the given routes in the dictionary, and sets the link to map/location-name/route-name?route_id, then the display of the link is the routes name. -->
                     {% for route in info[1] %}
                         <a class="route-link" href="/map/{{info[0][1]}}/{{info[1][route][1]}}?id={{route}}">
                             {{info[1][route][0]}}
                         </a>
-                    {% endfor %} <!-- Goes through all the given routes in the dictionary, and sets the link to map/location-name/route-name?route_id, then the display of the link is the routes name. -->
+                    {% endfor %}
                 </div>
             {% else %}
                 <h2>No current routes.</h2>
@@ -31,6 +32,7 @@
         <button class="button" onclick="location.href='/login'">Log in to Add a Route</button> <!-- Redirects to the login page if they are not logged in -->
     {% endif %}
 
+    <!-- Add route popup form -->
     <div class="popup" id="route-popup"> <!-- Popup Div-->
         <div class="popup-inner"> <!-- Popup Content -->
             <button data-popup-close class="close-button">&times;</button>

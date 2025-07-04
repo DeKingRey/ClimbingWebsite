@@ -45,8 +45,11 @@
                                 {% else %} <!-- If not logged in show the login button-->
                                     <button type="submit" name="action" value="login" class="button">Login to Join Events</button>
                                 {% endif %}
-
-                                <button type="submit" name="action" value="more_info" class="more-info-button">More Info</button>
+                                
+                                <!-- More info button leads to the specific events page -->
+                                <button type="submit" name="action" value="more_info" class="more-info-button">
+                                    <a class="route-link" href="/events/{{ event['slug'] }}?id={{ event['id'] }}">More Info</a>
+                                </button>
 
                                 <input type="hidden" id="event_id" name="event_id" value="{{ event['id'] }}">
                             </form>
