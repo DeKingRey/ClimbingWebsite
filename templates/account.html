@@ -31,34 +31,43 @@
                     <div class="logged-route">
                         <p>{{route[0]}}</p> <!-- The route name -->
 
-                    <div class="rating-box">
-                        <div class="stars account-stars" data-rating="{{ route[1] }}"> <!-- Data rating can be accessed in js -->
-                            {% for i in  range(1, 6) %} <!-- Makes an image of every star -->
-                                <label for="star{{i}}">
-                                    <i class="fa-solid fa-star"></i>
-                                </label>
-                            {% endfor %}
+                        <!--  Star rating div -->
+                        <div class="rating-box">
+                            <div class="stars account-stars" data-rating="{{ route[1] }}"> <!-- Data rating can be accessed in js -->
+                                {% for i in  range(1, 6) %} <!-- Makes an image of every star -->
+                                    <label for="star{{i}}">
+                                        <i class="fa-solid fa-star"></i>
+                                    </label>
+                                {% endfor %}
+                            </div>
                         </div>
-                    </div>
 
                         <p>{{route[2]}}</p> <!-- The logging date -->
                     </div>
                 {% endfor %}
             </div>
+
             <div class="account-section" id="favourites" style="display: none;">
                 Coming soon
             </div>
-            <div class="account-section joined-events-account" id="events" style="display: none;">
+
+            <!-- Displays users joined events -->
+            <div class="account-section joined-events-container" id="events" style="display: none;">
                 <!-- Displays all upcoming events, based on most soon -->
                 {% for event in events %}
                     <div class="account-event">
-                        <p>{{ event["name"] }}</p>
-                        <div class="countdown" id="countdown-{{ event['id'] }}">Loading...</div>
-                        <div class="event-status" id="event-status-{{ event['id'] }}">Loading...</div>
+                        <div style="display: flex; justify-content: center; gap: 12px;">
+                            <p style="font-weight: 500;">{{ event["name"] }}</p>
+                            <div class="event-status" id="event-status-{{ event['id'] }}">Loading...</div>
+                            <button class="toggle-button" onclick="toggleInfo(this)" type="button">></button>
+                        </div>
                         
+                        <div class="joined-event-info" style="display: none;">
+                            <div class="countdown" id="countdown-{{ event['id'] }}">Loading...</div>
+                            <p>help</p>
+                        </div>
                     </div>
                 {% endfor %}
-
                 <!-- For loop will be added for completed events-->
             </div>
 
@@ -102,6 +111,8 @@
             const events_info = {{ events | tojson }};
         </script>
         <script src="/static/js/time_remaining.js"></script>
+
+        <script src="/static/js/toggle.js"></script>
     {% else %}
         <h3>You are not logged in. <a href="/login">Log in here</a> Or <a href="/register">Register here</a>  if you don't have an account.</h3>     <!-- Otherwise provides the login and register pages. -->
     {% endif %}

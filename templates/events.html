@@ -18,7 +18,8 @@
 
                     <!-- Holds all the main info for the event -->
                     <div class="event-info"> 
-                        <p><strong>{{ event["start_date"] }}</strong> to <strong>{{ event["end_date"] }}</strong></p>
+                        <p style="font-size: 22px;"><strong class="date">{{ event["start_date"] }}</strong> to 
+                            <strong class="date">{{ event["end_date"] }}</strong></p>
 
                         <!-- Div for countdown related elements-->
                         <div style="display: flex; gap: 12px; justify-content: center">
@@ -118,6 +119,7 @@
             const events_info = {{ events | tojson }};
         </script>
         <script src="/static/js/time_remaining.js"></script>
+        <script src="/static/js/date_format.js"></script>
     </div>
 
 {% endblock %}
