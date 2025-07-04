@@ -58,6 +58,7 @@ function updateCountdown() {
 
         const countdown = document.getElementById(`countdown-${id}`);
         const eventStatus = document.getElementById(`event-status-${id}`);
+        const joinLeaveWrapper = document.getElementById(`join-leave-${id}`)
 
         const startDate = parseDateTime(event.start_date, event.start_time);
         const endDate = parseDateTime(event.end_date, event.end_time);
@@ -68,17 +69,20 @@ function updateCountdown() {
             remaining = getTimeRemaining(endDate); // Gets the time left until the event ends if it is ongoing
             eventStatus.textContent = "Ongoing";
             eventStatus.style.backgroundColor = "#F6C646";
+            joinLeaveWrapper.style.display = "none"
 
             if (!remaining) { // If the event is concluded
                 eventStatus.textContent = "Concluded";
                 eventStatus.style.backgroundColor = "#D95C5C";
                 countdown.style.display = "none";
+                joinLeaveWrapper.style.display = "none"
                 continue; // Skips event
             }
         }
         else {
             eventStatus.textContent = "Upcoming";
             eventStatus.style.backgroundColor = "#8DC149";
+            joinLeaveWrapper.style.display = "block"
         }
 
         const { days, hours, mins, seconds } = remaining;

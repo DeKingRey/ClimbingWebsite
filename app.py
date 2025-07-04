@@ -397,7 +397,7 @@ def event(event):
 
     id = request.args.get("id")
 
-    cur.execute("""SELECT Event.id, Event.name, post_date, start_date, end_date, Event.description, 
+    cur.execute("""SELECT Event.id, Event.name, post_date, start_date, end_date, Event.description, Event.full_description,
                 Location.name AS location_name, Account.display_name, start_time, end_time, Event.pending, Event.image
                 FROM Event
                 JOIN Location ON Event.location_id = Location.id
@@ -407,7 +407,7 @@ def event(event):
     
     # Will be used to find whether the user has joined the event
     cur.execute("SELECT event_id FROM Account_Event WHERE account_id = ? AND event_id = ?;", (session.get("user_id"), id,))
-    joined = cur.fetchall()
+    joined = cur.fetchone()
 
     event = dict(event) # Turns event into an actual dict
     event["joined"] = event["id"] in joined

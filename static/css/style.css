@@ -64,6 +64,10 @@ h4 {
     margin-bottom: 10px;
 }
 
+p {
+    margin: 0;
+}
+
 .divider {
     height: 6px;
     width: 100px;
@@ -625,6 +629,8 @@ isn't clicked*/
     font-weight: 600;
     transition: background-color 0.3s ease;
     margin-right: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 .approve-button:hover {
@@ -641,6 +647,8 @@ isn't clicked*/
     cursor: pointer;
     font-weight: 600;
     transition: background-color 0.3s ease;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 .deny-button:hover {
@@ -710,7 +718,7 @@ isn't clicked*/
     border: 3px solid #a2831d;
 } /* Displays the buttons in a row and add a border when selected*/
 
-.account-section {
+.account-section, .event-section {
     margin-top: 10px;
     background-color: var(--color-papyrus);
     padding: 20px;
@@ -906,4 +914,26 @@ isn't clicked*/
     margin: 15px auto;
 }
 
+/* Styles the more info button(link) */
+.more-info-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #f2efe7;
+    text-decoration: none;
+
+    border: none;
+    border-radius: 6px;
+
+    text-align: center;
+    font-size: 16px;
+    cursor: pointer;
+
+    transition: background-color 0.2s ease;
+    font-weight: 600;
+    font-size: 20px;
+
+    align-self: center;
+}
+
 /* #endregion */
+

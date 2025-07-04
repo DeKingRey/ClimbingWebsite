@@ -18,105 +18,51 @@
 
                     <!-- Holds all the main info for the event -->
                     <div class="event-info"> 
-                        <p style="font-size: 22px;"><strong class="date">{{ event["start_date"] }}</strong> to 
+                        <p style="font-size: 22px; margin-top: 10px;"><strong class="date">{{ event["start_date"] }}</strong> to 
                             <strong class="date">{{ event["end_date"] }}</strong></p>
 
                         <!-- Div for countdown related elements-->
-                        <div style="display: flex; gap: 12px; justify-content: center">
+                        <div style="display: flex; gap: 12px; justify-content: center; margin-top: 10px;">
                             <div class="countdown" id="countdown-{{ event['id'] }}">Loading...</div>
                             <div class="event-status" id="event-status-{{ event['id'] }}">Loading...</div>
                         </div>            
                         
-                        <p><strong>{{ event["location_name"] }}</strong></p>
+                        <p style="margin-top: 10px;"><strong>{{ event["location_name"] }}</strong></p>
                         <p class="description" >{{ event["description"] }}</p>
                         
                         <!-- Div with the buttons for the event -->
                         <div class="event-buttons" style="margin-top: auto;">
                             <!-- Form will enact the action the user presses -->
                             <form class="event-action-form" method="POST" data-event-id="{{ event['id'] }}"> <!-- Data is for JS to access the event id-->
-                                <!-- User can only join if logged in -->
-                                {% if username %}
-                                    <!-- If the user is not joined the event they can join else they can leave -->
-                                    {% if not event["joined"] %}
-                                        <button type="submit" name="action" value="join" class="join-button">Join</button>
-                                    {% else %}
-                                        <button type="submit" name="action" value="leave" class="leave-button">Leave</button>
-                                    {% endif %}         
-                                {% else %} <!-- If not logged in show the login button-->
-                                    <button type="submit" name="action" value="login" class="button">Login to Join Events</button>
-                                {% endif %}
-                                
-                                <!-- More info button leads to the specific events page -->
-                                <button type="submit" name="action" value="more_info" class="more-info-button">
-                                    <a class="route-link" href="/events/{{ event['slug'] }}?id={{ event['id'] }}">More Info</a>
-                                </button>
+                                <div class="button-row" style="justify-content: space-between;">
+                                    <!-- This div is disabled if the event is not upcoming-->
+                                    <div class="join-leave-wrapper" id="join-leave-{{ event['id'] }}">
+                                        <!-- User can only join if logged in -->
+                                        {% if username %}
+                                            <!-- If the user is not joined the event they can join else they can leave -->
+                                            {% if not event["joined"] %}
+                                                <button type="submit" name="action" value="join" class="join-button">Join</button>
+                                            {% else %}
+                                                <button type="submit" name="action" value="leave" class="leave-button">Leave</button>
+                                            {% endif %}         
+                                        {% else %} <!-- If not logged in show the login button-->
+                                            <button type="submit" name="action" value="login" class="button">Login to Join Events</button>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- More info button leads to the specific events page -->
+                                    <a class="more-info-button" href="/events/{{ event['slug'] }}?id={{ event['id'] }}">More Info</a>
 
-                                <input type="hidden" id="event_id" name="event_id" value="{{ event['id'] }}">
+                                    <input type="hidden" id="event_id" name="event_id" value="{{ event['id'] }}">
+                                </div>
+                                
                             </form>
                         </div>
                     </div>
                 </div>
             </div>
         {% endfor %}
-        <script>
-            // This function is reusable and will be called each time a button is pressed so that the butons always have an event listener when the HTML is reformed
-            function attachButtonListeners(form) {
-                let actionButton = null // Defines the button that will be clicked
-
-                // Loops through each button and gets the one which is clicked
-                form.querySelectorAll("button").forEach(button => {
-                    button.addEventListener("click", () => {
-                        actionButton = button;
-                    });
-                });
-
-                form.addEventListener("submit", async (e) => { // Adds event listener to the buttons
-                    e.preventDefault(); // Prevents page reloading
-
-                    form.querySelectorAll("button").forEach(btn => btn.disabled = true) // Disables all buttons to prevent double joining events
-
-                    const formData = new FormData(form); // Gets all form inputs 
-                    const eventId = formData.get("event_id");
-
-                    if (actionButton) { // Ensures submission is from a button(not enter    )
-                        formData.append(actionButton.name, actionButton.value); // Adds the chosen buttons name and value
-                    }
-                    const action = formData.get("action"); // Gets the chosen action
-                    
-                    // Sends a post request to event-action with the form data
-                    const response = await fetch("/event-action", {
-                        method: "POST",
-                        body: formData
-                    });
-
-                    if (response.ok) { // If the response goes through
-                        const result = await response.json(); // Gets the response of the function
-
-                        // Update the buttons based on the response
-                        if (result.status === "joined") { // Updates to the leave button when joining
-                            form.innerHTML = `
-                                <button type="submit" name="action" value="leave" class="leave-button">Leave</button>
-                                <input type="hidden" name="event_id" value="${eventId}">
-                            `;
-                            attachButtonListeners(form);
-                        } else if (result.status === "left") {
-                            form.innerHTML = `                                                              
-                                <button type="submit" name="action" value="join" class="join-button">Join</button>
-                                <input type="hidden" name="event_id" value="${eventId}">
-                            `;
-                            attachButtonListeners(form);
-                        } else if (result.status === "login") {
-                            window.location.href = "/login"; // Redirect to login page
-                        }
-                    }
-                });
-            }
-
-            // Goes through every event action form for each event when the page loads
-            document.querySelectorAll(".event-action-form").forEach(form => {
-                attachButtonListeners(form); // Attatches button listeners
-            });
-        </script>
+        <script src="/static/js/join_leave.js"></script>
 
         <script>
             const events_info = {{ events | tojson }};

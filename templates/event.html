@@ -11,7 +11,7 @@
         <div class="divider" style="margin-top: 0;"></div>
         
         <!-- Time and dates for the event -->
-        <div style="display: flex; gap: 12px; justify-content: center">
+        <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px;">
             <p style="font-size: 22px;">
                 <i class="fa-solid fa-calendar-days"></i> <strong class="date">{{ event["start_date"] }}</strong> 
                 at <strong>{{ event["start_time"] }} </strong><br>
@@ -21,7 +21,50 @@
             <div class="countdown" id="countdown-{{ event['id'] }}">Loading...</div>
         </div> 
 
-        
+        <p style="margin-top: 20px; font-size: 30px"><i class="fa-solid fa-location-dot"></i> {{ event["location_name"] }}</p>
+
+        <!-- Contains the buttons for each section -->
+        <div class="button-row" style="margin-bottom: 10px;">
+            <button class="button selected" onclick="showSection('details', this)">Details</button>
+            <button class="button" onclick="showSection('results', this)">Results</button>
+        </div>
+
+        <div class="event-section" id="details" style="display: block;">
+            <p>{{ event["full_description"] | safe }}</p>
+        </div>
+
+        <div class="event-section" id="results" style="display: none">
+            <p>Coming soon</p>
+        </div>
+
+        <!-- Div with the buttons for the event -->
+        <div class="event-buttons" style="margin-top: auto;">
+            <!-- Form will enact the action the user presses -->
+            <form class="event-action-form" method="POST" data-event-id="{{ event['id'] }}"> <!-- Data is for JS to access the event id-->
+                <div class="button-row" style="justify-content: space-between;">
+                    <!-- This div is disabled if the event is not upcoming-->
+                    <div class="join-leave-wrapper" id="join-leave-{{ event['id'] }}">
+                        <!-- User can only join if logged in -->
+                        {% if username %}
+                            <!-- If the user is not joined the event they can join else they can leave -->
+                            {% if not event["joined"] %}
+                                <button type="submit" name="action" value="join" class="join-button">Join</button>
+                            {% else %}
+                                <button type="submit" name="action" value="leave" class="leave-button">Leave</button>
+                            {% endif %}         
+                        {% else %} <!-- If not logged in show the login button-->
+                            <button type="submit" name="action" value="login" class="button">Login to Join Events</button>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- More info button leads to the specific events page -->
+                    <a class="more-info-button" href="/events">Back to Events</a>
+
+                    <input type="hidden" id="event_id" name="event_id" value="{{ event['id'] }}">
+                </div>
+                
+            </form>
+        </div>
     </div>
 
     <!-- Time related scripts for conversions and countdowns -->
@@ -120,4 +163,24 @@
         updateCountdown();
         intervalId = setInterval(updateCountdown, 1000); // Runs the function every second
     </script>
+
+    <!-- Select section script -->
+    <script>
+        function showSection(sectionId, button) { // Function taking in the id of the button
+            const sections = document.querySelectorAll(".event-section"); // Gets all event sections
+            sections.forEach(section => section.style.display = "none"); // Sets each sections display to none
+
+            const selected = document.getElementById(sectionId); // Gets the selected div by using the buttons id
+            selected.style.display = "block"; // Sets the div display to block(not none)
+            
+            // Removes selected class from all buttons
+            const buttons = document.querySelectorAll("button");
+            buttons.forEach(btn => btn.classList.remove("selected"));
+
+            // Adds selected class to clicked button
+            button.classList.add("selected");
+        }
+    </script>
+
+    <script src="/static/js/join_leave.js"></script>
 {% endblock %}
