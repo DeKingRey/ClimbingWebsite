@@ -8,6 +8,7 @@ import os
 import instructor
 from openai import OpenAI
 from dotenv import load_dotenv
+from datetime import datetime 
 load_dotenv()
 
 
@@ -128,7 +129,7 @@ def home():
 
 # The climbing API I need to use is currently not working so I may need to come up with a workaround to this if it isn't fixed
 @app.route("/map")
-def map():
+def climbing_map():
     # Calls the get map info function to get the marker coords
     markers = get_map_info()
     types = get_route_types()
@@ -384,6 +385,8 @@ def events():
         event["joined"] = event["id"] in joined_events_ids # Joined is a bool depending if the event id is in the joined events set
         event["slug"] = slugify(event["name"]) # Creates a slug for the event so the name can be properly used in a link
 
+    events.sort(key=event_status) # Sorts based on the status returned
+
     con.close()
 
     return render_template("events.html", header="Events", events=events)
@@ -410,7 +413,10 @@ def event(event):
     joined = cur.fetchone()
 
     event = dict(event) # Turns event into an actual dict
-    event["joined"] = event["id"] in joined
+    if joined != None:
+        event["joined"] = True
+    else:
+        event["joined"] = False
 
     return render_template("event.html", event=event)
 
@@ -448,6 +454,40 @@ def event_action():
 
     con.close()
     return jsonify({"status": status}) # Returns the status for JS
+
+
+def parse_datetime(date, time):
+    day, month, year = map(int, date.split("-")) # Separates day time and month
+    hour, minute = map(int, time[:-2].split(":")) # Separates hours and minutes, ignoring the meridian for now
+    ampm = time[-2:]    
+
+    # Following if statements convert the hours into 24hr time 
+    if ampm == "pm" and hour != 12: # Add 12 hours if its pm and not 12pm
+        hour += 12
+    if ampm == "am" and hour == 12: # If it's midnight
+        hour = 0
+    
+    return datetime(year, month, day, hour, minute) # Converts into a python datetime
+
+
+def event_status(event):
+    now = datetime.now() # Gets current time
+    start = parse_datetime(event["start_date"], event["start_time"])
+    end = parse_datetime(event["end_date"], event["end_time"])
+
+    # Gets the events status
+    if start <= now <= end: # If the event has started but not ended
+        if (event["joined"]):
+            return 0 # Ongoing joined
+        else:
+            return 1 # Ongoing not joined
+    elif now < start:
+        if (event["joined"]):
+            return 2 # Upcoming joined
+        else:
+            return 3 # Upcoming not joined
+    else:
+        return 4 # Concluded
 
 
 @app.route("/admin")
@@ -546,7 +586,7 @@ def get_joined_events():
     cur = con.cursor()
     
     # Gets relevant event info and user results 
-    cur.execute("""SELECT e.id, e.name, e.start_date, end_date, start_time, end_time, ae.placing, ae.time
+    cur.execute("""SELECT e.id, e.name, start_date, end_date, start_time, end_time, ae.placing, ae.time
                 FROM Account_Event ae
                 JOIN Event e ON ae.event_id = e.id
                 WHERE ae.account_id = ?
@@ -554,7 +594,14 @@ def get_joined_events():
     results = cur.fetchall()
     con.close()
 
-    return [dict(result) for result in results]
+    events = [dict(result) for result in results]
+    for event in events:
+        event["slug"] = slugify(event["name"])
+        event["joined"] = True
+    
+    events.sort(key=event_status) # Sorts based on the status returned
+
+    return events
 
 
 @app.route("/edit_account", methods=["GET", "POST"])

@@ -10,7 +10,7 @@
                 <!-- Div for the header of the which has the button to see more info on the route-->
                 <div class="pending-header">
                     <h4>{{location[1]}}</h4> <!-- Location name -->
-                    <button class="toggle-button" onclick="toggleInfo(this)" style="top: 15px;">></button>
+                    <button class="toggle-button" onclick="toggleInfo(this, 'block')" style="top: 15px;">></button>
                 </div>
 
                 <div class="extra-info">
@@ -44,7 +44,7 @@
             {% for route in routes %}
                 <div class="pending-header">
                     <h4>{{route[1]}}</h4> <!-- Route name -->
-                    <button class="toggle-button" onclick="toggleInfo(this)" style="top: 15px;">></button>
+                    <button class="toggle-button" onclick="toggleInfo(this, 'block')" style="top: 15px;">></button>
                 </div> <!-- Div for the header of the which has the button to see more info on the route-->
 
                 <div class="extra-info">

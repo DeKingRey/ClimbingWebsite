@@ -69,20 +69,20 @@ function updateCountdown() {
             remaining = getTimeRemaining(endDate); // Gets the time left until the event ends if it is ongoing
             eventStatus.textContent = "Ongoing";
             eventStatus.style.backgroundColor = "#F6C646";
-            joinLeaveWrapper.style.display = "none"
+            if (joinLeaveWrapper) joinLeaveWrapper.style.display = "none"; // Don't display join/leave buttons
 
             if (!remaining) { // If the event is concluded
                 eventStatus.textContent = "Concluded";
                 eventStatus.style.backgroundColor = "#D95C5C";
                 countdown.style.display = "none";
-                joinLeaveWrapper.style.display = "none"
+                if (joinLeaveWrapper) joinLeaveWrapper.style.display = "none";
                 continue; // Skips event
             }
         }
         else {
             eventStatus.textContent = "Upcoming";
             eventStatus.style.backgroundColor = "#8DC149";
-            joinLeaveWrapper.style.display = "block"
+            if (joinLeaveWrapper) joinLeaveWrapper.style.display = "block";
         }
 
         const { days, hours, mins, seconds } = remaining;

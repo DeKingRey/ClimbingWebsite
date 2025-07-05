@@ -880,6 +880,7 @@ isn't clicked*/
 .event-status {
     display: flex;
     align-items: center;
+    align-self: center;
 
     font-weight: 600;
     font-size: 1.5rem;
@@ -912,6 +913,10 @@ isn't clicked*/
     width: 80%;
     border-radius: 10px;
     margin: 15px auto;
+
+    justify-content: center;
+    flex-direction: column;
+    gap: 15px;
 }
 
 /* Styles the more info button(link) */
@@ -933,6 +938,9 @@ isn't clicked*/
     font-size: 20px;
 
     align-self: center;
+
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 /* #endregion */

@@ -41,7 +41,7 @@
         <div class="event-buttons" style="margin-top: auto;">
             <!-- Form will enact the action the user presses -->
             <form class="event-action-form" method="POST" data-event-id="{{ event['id'] }}"> <!-- Data is for JS to access the event id-->
-                <div class="button-row" style="justify-content: space-between;">
+                <div class="button-row" style="justify-content: space-between; margin-top: 20px;">
                     <!-- This div is disabled if the event is not upcoming-->
                     <div class="join-leave-wrapper" id="join-leave-{{ event['id'] }}">
                         <!-- User can only join if logged in -->
@@ -131,6 +131,7 @@
 
             const countdown = document.getElementById(`countdown-${id}`);
             const eventStatus = document.getElementById(`event-status-${id}`);
+            const joinLeaveWrapper = document.getElementById(`join-leave-${id}`)
 
             const startDate = parseDateTime(event.start_date, event.start_time);
             const endDate = parseDateTime(event.end_date, event.end_time);
@@ -141,11 +142,13 @@
                 remaining = getTimeRemaining(endDate); // Gets the time left until the event ends if it is ongoing
                 eventStatus.textContent = "Ongoing";
                 eventStatus.style.backgroundColor = "#F6C646";
+                joinLeaveWrapper.style.display = "none"
 
                 if (!remaining) { // If the event is concluded
                     eventStatus.textContent = "Concluded";
                     eventStatus.style.backgroundColor = "#D95C5C";
                     countdown.style.display = "none";
+                    joinLeaveWrapper.style.display = "none"
                     clearInterval(intervalId);
                     return;
                 }
@@ -153,6 +156,7 @@
             else {
                 eventStatus.textContent = "Upcoming";
                 eventStatus.style.backgroundColor = "#8DC149";
+                joinLeaveWrapper.style.display = "block"
             }
 
             const { days, hours, mins, seconds } = remaining;

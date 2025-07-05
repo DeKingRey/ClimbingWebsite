@@ -57,14 +57,16 @@
                 {% for event in events %}
                     <div class="account-event">
                         <div style="display: flex; justify-content: center; gap: 12px;">
-                            <p style="font-weight: 500;">{{ event["name"] }}</p>
+                            <p style="font-weight: 500; align-self: center;">{{ event["name"] }}</p>
                             <div class="event-status" id="event-status-{{ event['id'] }}">Loading...</div>
-                            <button class="toggle-button" onclick="toggleInfo(this)" type="button">></button>
+                            <button class="toggle-button" onclick="toggleInfo(this, 'flex')" type="button">></button>
                         </div>
                         
                         <div class="joined-event-info" style="display: none;">
-                            <div class="countdown" id="countdown-{{ event['id'] }}">Loading...</div>
-                            <p>help</p>
+                            <div class="countdown" id="countdown-{{ event['id'] }}" style="width: 50%;">
+                                Loading...
+                            </div>
+                            <a class="more-info-button" href="/events/{{ event['slug'] }}?id={{ event['id'] }}">Go to Event</a>
                         </div>
                     </div>
                 {% endfor %}
@@ -81,7 +83,7 @@
                 sections.forEach(section => section.style.display = "none"); // Sets each sections display to none
 
                 const selected = document.getElementById(sectionId); // Gets the selected div by using the buttons id
-                selected.style.display = "block"; // Sets the div display to block(not none)
+                selected.style.display = "flex"; // Sets the div display to block(not none)
                 
                 // Removes selected class from all buttons
                 const buttons = document.querySelectorAll("button");
