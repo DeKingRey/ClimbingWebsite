@@ -1,6 +1,17 @@
 {% extends 'layout.html' %}
 {% block content %}
     
+    {% if username %}
+        <div style="display: flex; justify-content: flex-end; margin-right: 50px;">
+            <button class="circle-button" onclick="location.href='/events/add-event'" 
+            style="font-size: 100px; justify-content: center; width: 70px; height: 70px; margin-top: 30px; ">
+                +
+            </button>
+        </div>
+    {% else %}
+        <button class="button" onclick="location.href='/login'">Log in to Add an Event</button> <!-- Redirects to the login page if they are not logged in -->
+    {% endif %}
+
     <!-- Every event will be displayed here. -->
     <div class="event-grid">
         {% for event in events %}

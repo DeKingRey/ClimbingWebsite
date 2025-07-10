@@ -7,7 +7,8 @@
                     <h2>Account Info</h2>
                     <div class="divider"></div>
                 </div>
-                <button type="submit" name="action" value="edit" class="edit-button fa-solid fa-pencil"></button>
+                <button type="submit" name="action" value="edit" class="circle-button fa-solid fa-pencil" 
+                style="position: absolute; top: 35px; right: 100px;"></button>
             </div>
             
             <!-- Account info -->
@@ -68,11 +69,18 @@
                                     Loading...
                                 </div>
                             {% else %}
-                                <p style="text-align: center;"><strong>Result</strong></p>
-                                <div class="account-result" style="display: flex; justify-content: center; gap: 12px;">
-                                    <p>{{ event["placing"] }}</p>
-                                    <p>{{ event["time"] }}</p>
-                                </div>
+                                {% if event["placing"] %}
+                                    <p style="text-align: center;"><strong>Result</strong></p>
+                                    <div class="account-result" style="display: flex; justify-content: center; gap: 30px;">
+                                        <p>{{ event["placing"] }}</p>
+                                        
+                                        {% if event["time"] %}
+                                            <p>{{ event["time"] }}</p>
+                                        {% endif    %}
+                                    </div>
+                                {% else %}
+                                    <p style="margin: auto;">No results yet, check back later</p>
+                                {% endif %}
                             {% endif %}
                             <a class="more-info-button" href="/events/{{ event['slug'] }}?id={{ event['id'] }}">Go to Event</a>
                         </div>

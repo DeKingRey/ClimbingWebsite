@@ -1,0 +1,110 @@
+{% extends 'layout.html' %}
+{% block content %}
+    <!-- Form to add an event -->
+    <form action="/events/add-event" method="POST" enctype="multipart/form-data" class="center-form">
+        <h2>Add Event</h2>
+        <div class="divider"></div>
+
+        <!-- Event name field -->
+        <div class="form-group">
+            <label for="name">Title</label>
+            <input type="text" name="name" id="name" required>
+        </div>
+
+        <!-- Event dates -->
+        <div class="form-group">
+            <label for="start_date">Start Date</label>
+            <input type="date" id="start_date" name="start_date" required>
+            <label for="end_date">End Date</label>
+            <input type="date" id="end_date" name="end_date" required>
+        </div>
+
+        <!-- Event times -->
+        <div class="form-group">
+            <label for="start_time">Start Time</label>
+            <input type="time" id="start_time" name="start_time" required>
+            <label for="end_time">End Time</label>
+            <input type="time" id="end_time" name="end_time" required>
+        </div>
+
+        <!-- Event location field -->
+        <div class="form-group">
+            <div class="location-wrapper">
+                <label for="location">Location</label>
+                <input type="text" placeholder="Search..." name="location" id="location_input" autocomplete="off" required>
+                <ul class="suggestions" id="locations"></ul> 
+            </div> <!-- Creates the input field and search bar for locations, first having a text input field, and then using suggestions as a list which will display search suggestions. -->
+
+            <div class="form-error location-errors" style="display: none;"></div> <!-- Div which will display location errors -->
+        </div>
+
+        <!-- Brief description field -->
+        <div class="form-group">
+            <label for="description">Brief Description</label>
+            <textarea name="description" id="description" rows="2" cols="10" required></textarea>
+        </div>
+
+        <!-- Full description field -->
+        <div class="form-group">
+            <label for="full_description">Full Description</label>
+            <textarea name="full_description" id="full_description" rows="8" cols="10" required></textarea>
+        </div>
+
+        <!-- Image field -->
+        <div class="form-group">
+            <label for="image" class="button">Add Image</label>
+            <input type="file" id="image" name="image" accept="image/*" style="display: none;" required> <!-- Adds an image input field where the user has to add in an image-->
+
+            <img src="#" alt="Image Preview" id="photo-preview" class="photo-preview location-preview">
+        </div>
+
+        <input type="hidden" name="account_id" id="account_id" value="{{ user_id }}"> <!-- Hidden value of the users id -->
+        <input type="hidden" name="post_date" id="post_date">
+
+        <div class="form-group">
+            <button type="submit" class="button submit-button">Submit</button>
+        </div>
+    </form>
+
+    <script src="/static/js/preview.js"></script>
+    <script> // Script for location search bar
+        const locs = {{ locations|tojson }} // Gets location info
+        const input = document.getElementById("location_input")
+        const suggestions = document.getElementById("locations")
+
+        input.addEventListener("input", () => {
+            const query = input.value.trim().toLowerCase(); // Gets the users input and removes spaces and makes it lowercase
+            suggestions.innerHTML = ""; 
+
+            if (!query) return;
+
+            const matches = locs.filter(loc =>
+                loc.toLowerCase().includes(query)
+            ); // Checks for locations which include the inputted search
+
+        matches.forEach(match => {
+            const li = document.createElement("li");
+            li.textContent = match;
+            li.addEventListener("click", () => {
+                input.value = match;
+                suggestions.innerHTML = "";
+                validateLocation(); // Revalidates location
+            });
+            suggestions.appendChild(li);
+        }); // For each match it will create a list element and allow the user to click on it to set that to the inputs value
+    });
+    </script>
+
+    <script> // Script for getting the date
+        document.addEventListener("DOMContentLoaded", function(){ // Executes code when the HTML has loaded
+            const date = new Date(); // New date based on local time from the users device
+            const year = date.getFullYear(); // Gets just the year
+            const month = String(date.getMonth() + 1).padStart(2, "0"); // Gets the month and its proper index, then in case its a 1 digit month it makes sure that there are 2 digits and it starts with 0(if needed)
+            const day = String(date.getDate()).padStart(2, "0");
+            
+            const formattedDate = `${day}-${month}-${year}`; // Format of YYYY-MM-DD
+
+            document.getElementById("post_date").value = formattedDate; // Sets the local date value to the current date
+        });
+    </script>
+{% endblock %}

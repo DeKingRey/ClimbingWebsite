@@ -433,7 +433,11 @@ def event(event):
 
         # Uses the lambda function to sort by the placement of the participant
         results.sort(key=lambda item: item["placing"]) # Lambdas are a temporary function used when the function is short and cleaner to do one one line once
-        #event["concluded"] = True 
+
+        # Adds the placing suffix e.g. 1st, 2nd, 3rd, 4th
+        for result in results:
+            if result["placing"]:
+                result["placing"] = placing_suffix(result["placing"])
     
     con.close()
 
@@ -475,6 +479,49 @@ def event_action():
     return jsonify({"status": status}) # Returns the status for JS
 
 
+@app.route("/events/add-event", methods=["GET", "POST"])
+def add_event():
+    locations = get_locations()
+
+    if request.method == "POST":
+        con = sqlite3.connect("climbing.db")
+        cur = con.cursor()
+
+        fields = ["name", "start_date", "end_date", "start_time", "end_time", "location", "description", "full_description", "post_date", "account_id"]
+        values = {field: request.form.get(field) for field in fields} # Converts values to a dictionary for easy accessing using the fields
+
+        # The following converts the dates into DD-MM-YYYY as is used in the SQL
+        start_date = datetime.strptime(values["start_date"], "%Y-%m-%d") # Converts the date to a datetime object, and is told the format
+        values["start_date"] = start_date.strftime("%d-%m-%Y") # Converts datetime to string giving the desired format
+
+        end_date = datetime.strptime(values["end_date"], "%Y-%m-%d")
+        values["end_date"] = end_date.strftime("%d-%m-%Y")
+        
+        # Converts the 24hr times to 12hr times to be used in the SQL
+        start_time = datetime.strptime(values["start_time"], "%H:%M")
+        values["start_time"] = start_time.strftime("%I:%M%p")
+
+        end_time = datetime.strptime(values["end_time"], "%H:%M")
+        values["end_time"] = end_time.strftime("%I:%M%p")
+
+        # Gets the locations id
+        values["location_id"] = values.pop("location") # Changes the location key name by popping it, which removes it but returns the value
+        cur.execute("SELECT id FROM Location WHERE name = ?", (values["location_id"],))
+        values["location_id"] = cur.fetchone()[0]
+
+        filename = photos.save(request.files["image"])
+        file_url = url_for("get_file", filename=filename)
+
+        cur.execute(f"""INSERT INTO Event ({' ,'.join(field for field in values)}, image, pending) 
+                    VALUES({', '.join('?' * len(fields))}, ?, 1)""",
+                    tuple(values[value] for value in values) + (file_url,))
+
+        con.commit()
+        con.close()
+
+    return render_template("add-event.html", header="Events", locations=locations)
+
+
 def parse_datetime(date, time):
     day, month, year = map(int, date.split("-")) # Separates day time and month
     hour, minute = map(int, time[:-2].split(":")) # Separates hours and minutes, ignoring the meridian for now
@@ -507,6 +554,20 @@ def event_status(event):
             return 3 # Upcoming not joined
     else:
         return 4 # Concluded
+
+
+def placing_suffix(placing):
+    if 11 <= placing <= 13: # 11-13 are different to other numbers as they have a th suffix instead of other 1's, 2's, and 3's
+        suffix = "th"
+    elif placing % 10 == 1: # Checks if the remainder of the plaing % 10 is 1, e.g. 10 fits into 21 twice, 21-20 = 1
+        suffix = "st"
+    elif placing % 10 == 2:
+        suffix = "nd"
+    elif placing % 10 == 3:
+        suffix = "rd"
+    else:
+        suffix = "th"
+    return str(f"{placing}{suffix}") # Updates the event placing
 
 
 @app.route("/admin")
@@ -618,9 +679,12 @@ def get_joined_events():
         event["slug"] = slugify(event["name"])
         event["joined"] = True
         event["concluded"] = event_status(event) == 4 # Will be true or false depending on what event status returns
-    
-    events.sort(key=event_status) # Sorts based on the status returned
 
+        # Adds the placing suffix e.g. 1st, 2nd, 3rd, 4th
+        if event["placing"]:
+            event["placing"] = placing_suffix(event["placing"])
+
+    events.sort(key=event_status) # Sorts based on the status returned
     return events
 
 

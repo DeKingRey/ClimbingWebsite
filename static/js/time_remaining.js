@@ -74,7 +74,7 @@ function updateCountdown() {
             if (!remaining) { // If the event is concluded
                 eventStatus.textContent = "Concluded";
                 eventStatus.style.backgroundColor = "#D95C5C";
-                countdown.style.display = "none";
+                if (countdown) countdown.style.display = "none";
                 if (joinLeaveWrapper) joinLeaveWrapper.style.display = "none";
                 continue; // Skips event
             }

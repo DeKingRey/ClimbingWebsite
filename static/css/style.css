@@ -122,7 +122,7 @@ label {
     color: var(--color-charcoal);
 }
 
-input, select {
+input, select, textarea {
     background-color: #fefce9;
     color: var(--color-charcoal);
     border: 2px solid var(--color-gold);
@@ -667,10 +667,7 @@ isn't clicked*/
     margin-bottom: 20px;
 } /* Positions the header container making it a flexbox to properly position the edit button */
 
-.edit-button {
-    position: absolute;
-    top: 35px;
-    right: 100px;
+.circle-button {
     background-color: var(--color-gold);
     color: var(--color-charcoal);
     border: none;
@@ -688,7 +685,7 @@ isn't clicked*/
     transition: transform 0.2s ease, background-color 0.2s ease;
 } /* Positions the circular edit button and it gives it style */
 
-.edit-button:hover {
+.circle-button:hover {
     background-color: var(--color-mustard);
     transform: translateY(-2px);
 } /* Changes the background color when hovered over*/
@@ -778,7 +775,7 @@ isn't clicked*/
     background-color: var(--color-papyrus);
     border-radius: 16px;
     padding: 30px;
-    margin: 40px auto;
+    margin: 20px auto;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); /* Adds a shadow */
     max-width: 400px;
     display: flex;
