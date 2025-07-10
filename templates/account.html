@@ -63,9 +63,17 @@
                         </div>
                         
                         <div class="joined-event-info" style="display: none;">
-                            <div class="countdown" id="countdown-{{ event['id'] }}" style="width: 50%;">
-                                Loading...
-                            </div>
+                            {% if not event["concluded"] %}
+                                <div class="countdown" id="countdown-{{ event['id'] }}" style="width: 50%;">
+                                    Loading...
+                                </div>
+                            {% else %}
+                                <p style="text-align: center;"><strong>Result</strong></p>
+                                <div class="account-result" style="display: flex; justify-content: center; gap: 12px;">
+                                    <p>{{ event["placing"] }}</p>
+                                    <p>{{ event["time"] }}</p>
+                                </div>
+                            {% endif %}
                             <a class="more-info-button" href="/events/{{ event['slug'] }}?id={{ event['id'] }}">Go to Event</a>
                         </div>
                     </div>

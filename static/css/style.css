@@ -945,3 +945,59 @@ isn't clicked*/
 
 /* #endregion */
 
+
+/* #region Results Table */
+
+/* Styles the table */
+table {
+    border: 1px, solid, black; /* Adds a border to everything */
+    border-collapse: collapse; /* Ensures no double borders */
+    border-radius: 8px;
+    overflow: hidden; /* Adds a rounded border and hides any overflow(making it rounded) */ 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Adds a slight shadow */ 
+
+    width: 80%;
+    padding: 10px; /* Adds space around everything */
+    margin: 20px auto; /* Centers everything with some top and bottom margin */
+
+    background-color: var(--color-cream); 
+}
+
+/* Styles the heading row */
+th {
+    background-color: var(--color-sunshine);    
+    padding: 12px 15px; /* Adds padding around the header elements */ 
+    text-align: left; /* Aligns to left */ 
+}
+
+/* Styles the data cells */ 
+td {
+    padding: 12px 15px; /* Adds padding */
+    border-bottom: 1px solid #ddd; 
+    text-align: left;
+}
+
+/* Alternates colours every second row for readability */ 
+tr:nth-child(even) {
+    background-color: #f7f7ed;
+}
+
+/* Adds a highlight effect when a row is hovered over */
+tr:hover {
+    background-color: #ffffef;
+    transition: background-color 0.2s ease-in-out;
+}
+
+/* Changes size if the screen width is shrunk(user is on phone) */
+@media (max-width: 768px) {
+    table {
+        width: 100%;
+        font-size: 14px;
+    }
+
+    th, td {
+        padding: 8px 10px;
+    }
+}
+
+/* #endregion */

@@ -400,8 +400,9 @@ def event(event):
 
     id = request.args.get("id")
 
+    # Gets all the events info
     cur.execute("""SELECT Event.id, Event.name, post_date, start_date, end_date, Event.description, Event.full_description,
-                Location.name AS location_name, Account.display_name, start_time, end_time, Event.pending, Event.image
+                Location.name AS location_name, Account.display_name AS name, start_time, end_time, Event.pending, Event.image
                 FROM Event
                 JOIN Location ON Event.location_id = Location.id
                 JOIN Account ON Event.account_id = Account.id
@@ -418,7 +419,25 @@ def event(event):
     else:
         event["joined"] = False
 
-    return render_template("event.html", event=event)
+    status = event_status(event) # Gets the status of the event
+    #event["concluded"] = False
+    results = dict()
+    if status == 4:
+        # Gets the result info if the event is concluded
+        cur.execute("""SELECT ae.placing, a.display_name AS name, a.username, ae.time
+                FROM Account_Event ae
+                JOIN Account a ON ae.account_id = a.id
+                WHERE ae.event_id = ?;""", (id,))
+        results = cur.fetchall()
+        results = [dict(result) for result in results] # Converts to an array of dictionaries
+
+        # Uses the lambda function to sort by the placement of the participant
+        results.sort(key=lambda item: item["placing"]) # Lambdas are a temporary function used when the function is short and cleaner to do one one line once
+        #event["concluded"] = True 
+    
+    con.close()
+
+    return render_template("event.html", event=event, results=results)
 
 
 @app.route("/event-action", methods=["POST"])
@@ -598,6 +617,7 @@ def get_joined_events():
     for event in events:
         event["slug"] = slugify(event["name"])
         event["joined"] = True
+        event["concluded"] = event_status(event) == 4 # Will be true or false depending on what event status returns
     
     events.sort(key=event_status) # Sorts based on the status returned
 

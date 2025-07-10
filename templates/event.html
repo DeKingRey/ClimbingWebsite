@@ -34,7 +34,37 @@
         </div>
 
         <div class="event-section" id="results" style="display: none">
-            <p>Coming soon</p>
+            <!-- Results table which will display when results are available-->
+            {% if results %}
+                <table class="results-table">
+                    <!-- Header row, time only is displayed if it was given -->
+                    <tr>
+                        <th>Placing</th>
+                        <th>Name</th>
+                        {% if results[0]["time"] is not none %} <!-- Ensures time is in the dictionary -->
+                            <th>Time</th>
+                        {% endif %}
+                    </tr>
+                    <!-- Loops through results making a row for each participant -->
+                    {% for result in results %}
+                        <tr>
+                            <td>{{result["placing"]}}</td>
+
+                            {% if result["name"] %} <!-- Uses the users display name if they have one -->
+                                <td>{{result["name"]}}</td>
+                            {% else %} <!-- Uses the users username if they don't have a display name-->
+                                <td>{{result["username"]}}</td>
+                            {% endif %}
+
+                            {% if result["time"] %} <!-- Only displays time if applicable -->
+                                <td>{{result["time"]}}</td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <h4>No results yet, check back later</h4>
+            {% endif %}
         </div>
 
         <!-- Div with the buttons for the event -->
