@@ -87,6 +87,7 @@ map_routes_url = "https://climbnz.org.nz/api/routes"
 @app.context_processor
 def inject_user():
     return {
+        "user_id": session.get("user_id"),
         "username": session.get("username"),
         "profile_picture": session.get("profile_picture"),
         "permission_level": session.get("permission_level"),
@@ -499,10 +500,10 @@ def add_event():
         
         # Converts the 24hr times to 12hr times to be used in the SQL
         start_time = datetime.strptime(values["start_time"], "%H:%M")
-        values["start_time"] = start_time.strftime("%I:%M%p")
+        values["start_time"] = start_time.strftime("%I:%M%p").lower()
 
         end_time = datetime.strptime(values["end_time"], "%H:%M")
-        values["end_time"] = end_time.strftime("%I:%M%p")
+        values["end_time"] = end_time.strftime("%I:%M%p").lower()
 
         # Gets the locations id
         values["location_id"] = values.pop("location") # Changes the location key name by popping it, which removes it but returns the value
@@ -519,7 +520,9 @@ def add_event():
         con.commit()
         con.close()
 
-    return render_template("add-event.html", header="Events", locations=locations)
+        return redirect(url_for("events"))
+    else:
+        return render_template("add-event.html", header="Events", locations=locations)
 
 
 def parse_datetime(date, time):
