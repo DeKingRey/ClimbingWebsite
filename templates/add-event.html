@@ -13,25 +13,26 @@
             <div class="form-error name-errors" style="display: none;"></div>
         </div>
 
-        <!-- Event dates -->
-        <div class="form-group">
-            <label for="start_date">Start Date</label>
-            <input type="date" id="start_date" name="start_date" required>
-            <label for="end_date">End Date</label>
-            <input type="date" id="end_date" name="end_date" required>
+        <!-- Date containers to align them -->
+        <div class="form-dates" style="display: flex; width: 80%;">
+            <!-- Event dates -->
+            <div class="form-group" style="width: 45%;">
+                <label for="start_date">Start Date</label>
+                <input type="date" id="start_date" name="start_date" required>
+                <label for="end_date">End Date</label>
+                <input type="date" id="end_date" name="end_date" required>
+                <div class="form-error datetime-errors" style="display: none;"></div>
+            </div>
 
-            <div class="form-error date-errors" style="display: none;"></div>
+            <!-- Event times -->
+            <div class="form-group" style="width: 40%;">
+                <label for="start_time">Start Time</label>
+                <input type="time" id="start_time" name="start_time" required>
+                <label for="end_time">End Time</label>
+                <input type="time" id="end_time" name="end_time" required>
+            </div>
         </div>
-
-        <!-- Event times -->
-        <div class="form-group">
-            <label for="start_time">Start Time</label>
-            <input type="time" id="start_time" name="start_time" required>
-            <label for="end_time">End Time</label>
-            <input type="time" id="end_time" name="end_time" required>
-
-            <div class="form-error time-errors" style="display: none;"></div>
-        </div>
+        
 
         <!-- Event location field -->
         <div class="form-group">
@@ -159,49 +160,101 @@
             nameInput.classList.remove("invalid");
         }
 
-        function validateDate() {
-            const startValue = new Date(startDate.value);
-            const endValue = new Date(endDate.value);
-            const errorDiv = document.querySelector(".date-errors");
+        function validateDatetime() {
+            const startValue = new Date(`${startDate.value}T${startTime.value}`);
+            const endValue = new Date(`${endDate.value}T${endTime.value}`);
+            const errorDiv = document.querySelector(".datetime-errors");
 
-            if (isNaN(startValue.getTime) || isNaN(endValue.getTime))
-            errorDiv.textContent = startValue || endValue ? "" : "Date is required";
-            errorDiv.style.display = startValue || endValue ? "none" : "block";
-            //gradeInput.classList.toggle("invalid", !startValue || !endValue);
-
-            console.log(startValue);
-
-            return !!startValue || !!endValue;
-        }
-
-        function validateBolts() {
-            const value = boltsInput.value.trim();
-            const errorDiv = document.querySelector(".bolts-errors");
-            if (value === "") { // If the value is empty then it returns true(bolts may be empty)
-                errorDiv.textContent = "";
-                boltsInput.value = "0"; // Sets default value to 0
-                return true;
+            // Ensures times are inputted
+            if (isNaN(startValue.getTime()) || isNaN(endValue.getTime()))
+            {
+                errorDiv.textContent = "Dates and times are required";
+                errorDiv.style.display = "block";
+                console.log(`Start: ${startValue} End: ${endValue}`);
+                return false;
             }
-            const isValid = /^\d+$/.test(value); // Dumbest operator(?) I've ever seen, the regex, checks if the value is numeric, has at least the digits 0-9 so isn't negative, nor a float
-            errorDiv.textContent = isValid ? "" : "Bolts must be a non-negative integer";
-            errorDiv.style.display = isValid ? "none" : "block";
-            boltsInput.classList.toggle("invalid", !isValid);
-            return isValid;
+
+            // Ensures the selected dates haven't passed
+            const now = new Date(); // Gets current datetime
+            if (startValue < now || endValue < now)
+            {
+                errorDiv.textContent = "Date and time must be in the future";
+                errorDiv.style.display = "block";   
+                return false;
+            }
+            
+            // Ensures dates are in the correct order
+            if (startValue > endValue)
+            {
+                errorDiv.textContent = "Start datetime must be before end datetime";
+                errorDiv.style.display = "block";
+                return false;
+            }
+
+            // Otherwise it works
+            errorDiv.textContent = "";
+            errorDiv.style.display = "none";
+            return true;
         }
 
-        function validateTypes() {
-            const checked = [...typesInput].filter(box => box.checked) // The ... separates values into individual elements(spread operator), gets all the checked boxes
-            const errorDiv = document.querySelector(".types-errors");
-            errorDiv.textContent = checked.length ? "" : "Select at least one type"; // Checks that checked is not empty(ensures one thing is checked)
-            errorDiv.style.display = checked.length ? "none" : "block";
-            return checked.length > 0;  
+        function validateLocation() {
+            const value = locationInput.value.trim(); // Gets location value
+            const errorDiv = document.querySelector(".location-errors"); // Gets the location errors div
+
+            if (!value) { // If value field is empty
+                errorDiv.textContent = "Location required"; // Checks if value is empty(false), if not error div is empty
+                errorDiv.style.display = "block"; // Div becomes visible
+                locationInput.classList.add("invalid");
+
+                return false;
+            }
+
+            errorDiv.textContent = ""
+            errorDiv.style.display = "none"; // Div becomes visible
+            nameInput.classList.remove("invalid");
+        }
+
+        function validateBriefDesc() {
+            const value = briefDesc.value.trim(); // Gets brief desc value
+            const errorDiv = document.querySelector(".desc-errors"); // Gets the brief desc errors div
+
+            if (!value) { // If value field is empty
+                errorDiv.textContent = "Brief description required"; // Checks if value is empty(false), if not error div is empty
+                errorDiv.style.display = "block"; // Div becomes visible
+                briefDesc.classList.add("invalid");
+
+                return false;
+            }
+
+            // Adds errors depending on whether the description is too long or too short
+            if (value.length < 50) { // The title must be between 10 and 300 characters
+                errorDiv.textContent = "Description is too short";
+                errorDiv.style.display = "block"; // Div becomes visible
+                nameInput.classList.add("invalid");
+
+                return false;
+            } else if (value.length > 250) {
+                errorDiv.textContent = "Description is too long";
+                errorDiv.style.display = "block"; // Div becomes visible
+                nameInput.classList.add("invalid");
+
+                return false;
+            }
+            errorDiv.textContent = ""
+            errorDiv.style.display = "none"; // Div becomes visible
+            nameInput.classList.remove("invalid");
         }
 
         // Adds event listeners to all input fields, waiting for input
         nameInput.addEventListener("input", validateName);
-        startDate.addEventListener("input", validateDate);
-        endDate.addEventListener("input", validateDate);
-        boltsInput.addEventListener("input", validateBolts);
+
+        startDate.addEventListener("input", validateDatetime);
+        endDate.addEventListener("input", validateDatetime);
+        startTime.addEventListener("input", validateDatetime);
+        endTime.addEventListener("input", validateDatetime);
+
+        locationInput.addEventListener("input", validateLocation);
+        briefDesc.addEventListener("input", validateBriefDesc);
         typesInput.forEach(box => box.addEventListener("change", validateTypes)); // Checks for change in each checkbox
 
 
