@@ -148,16 +148,17 @@
                 return false;
             }
 
-            if (value.length < 3 || value.length > 20) { // The title must be between 3 and 20 characters
-                errorDiv.textContent = "Event title must be between 3 and 20 characters";
+            if (value.length < 3 || value.length > 100) { // The title must be between 3 and 20 characters
+                errorDiv.textContent = "Event title must be between 3 and 100 characters";
                 errorDiv.style.display = "block"; // Div becomes visible
                 nameInput.classList.add("invalid");
 
                 return false;
             }
-            errorDiv.textContent = ""
+            errorDiv.textContent = "";
             errorDiv.style.display = "none"; // Div becomes visible
             nameInput.classList.remove("invalid");
+            return true;
         }
 
         function validateDatetime() {
@@ -227,22 +228,73 @@
             }
 
             // Adds errors depending on whether the description is too long or too short
-            if (value.length < 50) { // The title must be between 10 and 300 characters
+            if (value.length < 50) { // The description must be between 10 and 300 characters
                 errorDiv.textContent = "Description is too short";
                 errorDiv.style.display = "block"; // Div becomes visible
-                nameInput.classList.add("invalid");
+                briefDesc.classList.add("invalid");
 
                 return false;
             } else if (value.length > 250) {
                 errorDiv.textContent = "Description is too long";
                 errorDiv.style.display = "block"; // Div becomes visible
-                nameInput.classList.add("invalid");
+                briefDesc.classList.add("invalid");
 
                 return false;
             }
-            errorDiv.textContent = ""
+            errorDiv.textContent = "";
             errorDiv.style.display = "none"; // Div becomes visible
-            nameInput.classList.remove("invalid");
+            briefDesc.classList.remove("invalid");
+            return true;
+        }
+
+        function validateFullDesc() {
+            const value = fullDesc.value.trim(); // Gets full desc value
+            const errorDiv = document.querySelector(".full-desc-errors"); // Gets the full desc errors div
+
+            if (!value) { // If value field is empty
+                errorDiv.textContent = "Full description required"; // Checks if value is empty(false), if not error div is empty
+                errorDiv.style.display = "block"; // Div becomes visible
+                briefDesc.classList.add("invalid");
+
+                return false;
+            }
+
+            // Adds errors depending on whether the description is too long or too short
+            if (value.length < 100) { // The description must be between 10 and 300 characters
+                errorDiv.textContent = "Description is too short";
+                errorDiv.style.display = "block"; // Div becomes visible
+                fullDesc.classList.add("invalid");
+
+                return false;
+            } else if (value.length > 1000) {
+                errorDiv.textContent = "Description is too long";
+                errorDiv.style.display = "block"; // Div becomes visible
+                fullDesc.classList.add("invalid");
+
+                return false;
+            }
+            errorDiv.textContent = "";
+            errorDiv.style.display = "none"; // Div becomes visible
+            fullDesc.classList.remove("invalid");
+            return true;
+        }
+
+        function validateImage() {
+            const value = imageInput.value.trim(); // Gets image value
+            const errorDiv = document.querySelector(".image-errors"); // Gets the image errors div
+
+            if (!value) { // If value field is empty
+                errorDiv.textContent = "Image required"; // Checks if value is empty(false), if not error div is empty
+                errorDiv.style.display = "block"; // Div becomes visible
+                imageInput.classList.add("invalid");
+
+                return false;
+            }
+
+            errorDiv.textContent = "";
+            errorDiv.style.display = "none"; // Div becomes visible
+            imageInput.classList.remove("invalid");
+            return true;
         }
 
         // Adds event listeners to all input fields, waiting for input
@@ -255,7 +307,8 @@
 
         locationInput.addEventListener("input", validateLocation);
         briefDesc.addEventListener("input", validateBriefDesc);
-        typesInput.forEach(box => box.addEventListener("change", validateTypes)); // Checks for change in each checkbox
+        fullDesc.addEventListener("input", validateFullDesc);
+        imageInput.addEventListener("input", validateImage);
 
 
         // Adds event listener to submit button
@@ -263,14 +316,15 @@
             // Checks validators
             const valid = 
                 validateName() &&
-                validateDate() &&
-                validateBolts() &&
-                validateTypes();
+                validateDatetime() &&
+                validateLocation() &&
+                validateBriefDesc() &&
+                validateFullDesc() &&
+                validateImage();
 
-            // If any come back false it will prevent submission, and reopen route popup
+            // If any come back false it will prevent submission
             if (!valid) {
                 e.preventDefault();
-                document.getElementById("route-popup").classList.add("open");
             }
         });
     </script>

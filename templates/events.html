@@ -39,7 +39,8 @@
                         </div>            
                         
                         <p style="margin-top: 10px;"><strong>{{ event["location_name"] }}</strong></p>
-                        <p class="description" >{{ event["description"] }}</p>
+                        <!-- Flask stores text area new lines as \n so we convert them to <br> and then they will display -->
+                        <p class="description" >{{ event["description"] | replace('\n', '<br>') | safe }}</p> 
                         
                         <!-- Div with the buttons for the event -->
                         <div class="event-buttons" style="margin-top: auto;">

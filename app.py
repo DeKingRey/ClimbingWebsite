@@ -327,7 +327,7 @@ def add_location():
     con.commit()
     con.close()
 
-    return redirect(url_for("map"))
+    return redirect(url_for("climbing_map"))
 
 
 @app.route("/log-route", methods=["GET", "POST"])
@@ -600,9 +600,22 @@ def admin():
         row = [result[0], result[1], coords, result[3], result[4]]
         locations.append(row)
 
+    con.row_factory = sqlite3.Row # For dictionary access(I didn't know about this previously)
+    cur = con.cursor() # Must make a new cursor due to the change in the con
+
+    # Gets all pending events
+    cur.execute("""SELECT Event.id, Event.name, start_date, end_date, Event.description, Event.full_description,
+                Location.name AS location_name, start_time, end_time, Event.image
+                FROM Event
+                JOIN Location ON Event.location_id = Location.id
+                JOIN Account ON Event.account_id = Account.id
+                WHERE Event.pending = 1;""")
+    results = cur.fetchall()
+    events = [dict(event) for event in results] # Turns it into a dictionary
+
     con.close()
 
-    return render_template("admin.html", header="Admin", routes=routes, locations=locations)
+    return render_template("admin.html", header="Admin", routes=routes, locations=locations, events=events)
 
 
 @app.route("/process-submission", methods=["GET", "POST"])

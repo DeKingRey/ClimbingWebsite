@@ -30,7 +30,7 @@
         </div>
 
         <div class="event-section" id="details" style="display: block;">
-            <p>{{ event["full_description"] | safe }}</p>
+            <p>{{ event["full_description"] | replace('\n', '<br>') | safe }}</p>
         </div>
 
         <div class="event-section" id="results" style="display: none">

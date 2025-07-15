@@ -598,6 +598,10 @@ img:hover {
 } /* Styles the info div, making it an element in a box below the header also sets default display to none when button 
 isn't clicked*/
 
+.extra-info p {
+    padding: 10px;
+}
+
 .toggle-button {
     position: relative;
     cursor: pointer;
