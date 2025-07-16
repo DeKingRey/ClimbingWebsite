@@ -63,7 +63,39 @@
                     {% endfor %}
                 </table>
             {% else %}
-                <h4 style="margin: auto;">No results yet, check back later</h4>
+            <p>{{user_id}}</p>
+                {% if user_id == event["host_id"] and partipants %}
+                    <form action="{{ url_for('add_results') }}" method="POST">
+                        <table class="results-table">
+                            <!-- Header row, time only is displayed if it was given -->
+                            <tr>
+                                <th>Placing</th>
+                                <th>Name</th>
+                                <th>Time(optional)</th>
+                            </tr>
+                            <!-- Loops through results making a row for each participant -->
+                            {% for user in participants %}
+                                <tr>
+                                    <td>Placing</td>
+                                    <input type="hidden" name="placing" id="placing" required>
+
+                                    {% if user["name"] %} <!-- Uses the users display name if they have one -->
+                                        <td>{{user["name"]}}</td>
+                                    {% else %} <!-- Uses the users username if they don't have a display name-->
+                                        <td>{{user["username"]}}</td>
+                                    {% endif %}
+
+                                    <td>Time(optional)</td>
+                                    <input type="number">
+
+                                    <input type="hidden" name="account_id" id="account_id" value="{{user['id']}}">
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    </form>
+                {% else %}
+                    <h4 style="margin: auto;">No results yet, check back later</h4>
+                {% endif %}
             {% endif %}
         </div>
 

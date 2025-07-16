@@ -403,7 +403,8 @@ def event(event):
 
     # Gets all the events info
     cur.execute("""SELECT Event.id, Event.name, post_date, start_date, end_date, Event.description, Event.full_description,
-                Location.name AS location_name, Account.display_name AS name, start_time, end_time, Event.pending, Event.image
+                Location.name AS location_name, Account.display_name AS name, start_time, end_time, Event.pending, Event.image, 
+                Account.id AS host_id
                 FROM Event
                 JOIN Location ON Event.location_id = Location.id
                 JOIN Account ON Event.account_id = Account.id
@@ -423,26 +424,31 @@ def event(event):
     status = event_status(event) # Gets the status of the event
     #event["concluded"] = False
     results = dict()
+    participants = dict()
     if status == 4:
         # Gets the result info if the event is concluded
-        cur.execute("""SELECT ae.placing, a.display_name AS name, a.username, ae.time
+        cur.execute("""SELECT ae.placing, a.display_name AS name, a.username, ae.time, a.id
                 FROM Account_Event ae
                 JOIN Account a ON ae.account_id = a.id
                 WHERE ae.event_id = ?;""", (id,))
-        results = cur.fetchall()
-        results = [dict(result) for result in results] # Converts to an array of dictionaries
+        data = cur.fetchall()
+        data_dict = [dict(info) for info in data]
+        if data_dict[0]["placing"]:
+            results = [dict(result) for result in data] # Converts to an array of dictionaries
 
-        # Uses the lambda function to sort by the placement of the participant
-        results.sort(key=lambda item: item["placing"]) # Lambdas are a temporary function used when the function is short and cleaner to do one one line once
+            # Uses the lambda function to sort by the placement of the participant
+            results.sort(key=lambda item: item["placing"]) # Lambdas are a temporary function used when the function is short and cleaner to do one one line once
 
-        # Adds the placing suffix e.g. 1st, 2nd, 3rd, 4th
-        for result in results:
-            if result["placing"]:
-                result["placing"] = placing_suffix(result["placing"])
+            # Adds the placing suffix e.g. 1st, 2nd, 3rd, 4th
+            for result in results:
+                if result["placing"]:
+                    result["placing"] = placing_suffix(result["placing"])
+        else:
+            participants = [dict(participant) for participant in data]
     
     con.close()
 
-    return render_template("event.html", event=event, results=results)
+    return render_template("event.html", event=event, results=results, participants=participants)
 
 
 @app.route("/event-action", methods=["POST"])
