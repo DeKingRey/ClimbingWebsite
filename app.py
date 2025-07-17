@@ -103,23 +103,18 @@ def home():
     user_id = session.get("user_id")
     
     if user_id is not None:
-        # Gets accounts info when logging in
+        # Gets accounts info when logging in to be used across the website
         con = sqlite3.connect("climbing.db")
         cur = con.cursor()
         cur.execute("SELECT profile_picture, username, permission_level, display_name, date FROM Account WHERE id = ?", (user_id,))
         result = cur.fetchone()
-        profile_picture = result[0]
-        username = result[1]
-        permission_level = result[2]
-        display_name = result[3]
-        date = result[4]
-
         # Sets all session variables
-        session["profile_picture"] = profile_picture
-        session["username"] = username
-        session["permission_level"] = permission_level
-        session["display_name"] = display_name
-        session["date"] = date
+        session["profile_picture"] = result[0]
+        session["username"] = result[1]
+        session["permission_level"] = result[2]
+        session["display_name"] = result[3]
+        session["date"] = result[4]
+        con.close()
     else:
         profile_picture = None
         username = None
@@ -130,7 +125,6 @@ def home():
     return render_template("home.html", header="Home")
     
 
-# The climbing API I need to use is currently not working so I may need to come up with a workaround to this if it isn't fixed
 @app.route("/map")
 def climbing_map():
     # Calls the get map info function to get the marker coords
@@ -282,18 +276,17 @@ def add_route():
     con = sqlite3.connect("climbing.db")
     cur = con.cursor()
 
-    # Gets the location id
     cur.execute("SELECT id FROM Location WHERE name = ?", (location_name,))
     location_id = cur.fetchone()[0]
 
-    # Sets all the field names
+    # Sets all the field names for inserting
     fields = ["name", "grade", "bolts"]
     # Gets all the field values from the form, by looping through the fields list
     values = [request.form.get(field) for field in fields]
 
     types = request.form.getlist("types[]")
 
-    # Will insert the values into the databse, first it uses the field names to define the columns, and then uses the length of fields to find the amount of '?'s, and uses values list as the values
+    # Will insert the values into the database using the given field names and values
     cur.execute(f"INSERT INTO Route ({', '.join(fields)}, location_id, pending) VALUES({', '.join('?' * len(fields))}, ?, 1)", values + [location_id])
     con.commit()
 
@@ -455,10 +448,10 @@ def event_action():
 
 def get_events(pending):
     con = sqlite3.connect("climbing.db")
-    con.row_factory = sqlite3.Row # Returns results as a dictionary or a tuple that can be indexed, I will use as a dict for easier indexing so instead of event[9] for image(or whatever index it is) I can simply do event["image"]
+    con.row_factory = sqlite3.Row # Returns results as a dictionary or a tuple that can be indexed
 
     cur = con.cursor()
-    # Query gets all events info
+    # Gets all events info
     cur.execute("""SELECT Event.id, Event.name, post_date, start_date, end_date, Event.description, 
                 Location.name AS location_name, Account.display_name, start_time, end_time, Event.pending, Event.image
                 FROM Event
@@ -473,7 +466,7 @@ def get_events(pending):
     # The joined events will be organised and ordered if the event isn't pending
     if pending == 0:
         # Sets joined events to none as it will only be needed if the user is logged in
-        joined_events_ids = set() # Sets don't have duplicates
+        joined_events_ids = set()
         if session.get("user_id"):
             user_id = session.get("user_id")      
 
@@ -482,12 +475,13 @@ def get_events(pending):
             # Adds every event id from the query to the set
             joined_events_ids = {row["event_id"] for row in cur.fetchall()}
 
-        # Adds a joined key to the events dict where every event in the joined events set is added 
+        # Adds a joined key to the events dict which is used to tell whether the event is joined by the user or not
         for event in events:
-            event["joined"] = event["id"] in joined_events_ids # Joined is a bool depending if the event id is in the joined events set
+            event["joined"] = event["id"] in joined_events_ids
             event["slug"] = slugify(event["name"]) # Creates a slug for the event so the name can be properly used in a link
-
-        events.sort(key=event_status) # Sorts based on the status returned
+        
+        # Sorts by status: Ongoing joined > Ongoing > Upcoming joined > Upcoming > Concluded, then by nearest time(start or end)
+        events.sort(key=sort_events)
 
     con.close()
     return events
@@ -576,6 +570,18 @@ def event_status(event):
             return 3 # Upcoming not joined
     else:
         return 4 # Concluded
+
+
+def sort_events(event):
+    # Will sort events status by how soon they are starting/ending
+    status = event_status(event)
+    if status <= 1 or status == 4: # Ongoing or concluded events are sorted by when they will/have ended
+        sort_time = parse_datetime(event["end_date"], event["end_time"])
+    else: # Upcoming events are sorted by when they start
+        sort_time = parse_datetime(event["start_date"], event["start_time"])
+
+    print(f"Event: {event['name']} | Status: {status} | Sort Time: {sort_time}")
+    return(status, sort_time.timestamp())
 
 
 def placing_suffix(placing):
