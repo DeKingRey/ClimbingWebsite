@@ -45,9 +45,11 @@ configure_uploads(app, photos)
 
 def NoSpaces(message):
     def _no_spaces(form, field):
+        # Raises error if there is a space in the error
         if " " in field.data:
             raise ValidationError(message)
     return _no_spaces
+
 
 # This creates a class which can be used to make forms(specifically for accounts)
 class RegisterForm(FlaskForm):
@@ -78,7 +80,7 @@ class RegisterForm(FlaskForm):
     # Creates the submit button which will check and validate the inputted data
     submit = SubmitField("Register")
 
-# This is the url which is for the API
+
 # Currently the API does not work so I will wait through the holidays to see if it continues to be like this
 map_routes_url = "https://climbnz.org.nz/api/routes"
 
@@ -138,8 +140,6 @@ def climbing_map():
     settings = get_settings()
     routes = get_routes()
 
-    print(locations)
-
     return render_template("map.html", header="Map", markers=markers, types=types, locations=locations, settings=settings, climb_routes=routes)
 
 
@@ -151,12 +151,11 @@ def get_map_info():
     cur.execute("SELECT id, name, coordinates FROM Location WHERE pending = 0;")
     results = cur.fetchall()
 
-    # Sets markers as an empty dictionary
     markers = {}
     for result in results: 
-        # Makes a list with coords and name, with the coordinates split into a list(of latitude and longitude)
+        # Makes a list with coords and name and splits them to be used individually
         info = [result[2].split(), result[1], slugify(result[1])]
-        # Sets the ID as the key, and the previous list of info as the value
+        # Sets the ID as the key, and the previous list of info as the value to use for all markers
         markers[result[0]] = info
         
     return markers
@@ -356,39 +355,7 @@ def posts():
 
 @app.route("/events", methods=["GET", "POST"])
 def events():
-    con = sqlite3.connect("climbing.db")
-    con.row_factory = sqlite3.Row # Returns results as a dictionary or a tuple that can be indexed, I will use as a dict for easier indexing so instead of event[9] for image(or whatever index it is) I can simply do event["image"]
-
-    cur = con.cursor()
-    # Query gets all events info
-    cur.execute("""SELECT Event.id, Event.name, post_date, start_date, end_date, Event.description, 
-                Location.name AS location_name, Account.display_name, start_time, end_time, Event.pending, Event.image
-                FROM Event
-                JOIN Location ON Event.location_id = Location.id
-                JOIN Account ON Event.account_id = Account.id
-                WHERE Event.pending = 0;""")
-    events = cur.fetchall()
-
-    # Sets joined events to none as it will only be needed if the user is logged in
-    joined_events_ids = set() # Sets don't have duplicates
-    if session.get("user_id"):
-        user_id = session.get("user_id")      
-
-        # Gets every event the user has joined
-        cur.execute("SELECT event_id FROM Account_Event WHERE account_id = ?;", (user_id,))
-        # Adds every event id from the query to the set
-        joined_events_ids = {row["event_id"] for row in cur.fetchall()}
-
-    # Converts the events sql dict into a python array of dicts so I can add values
-    events = [dict(event) for event in events]
-    # Adds a joined key to the events dict where every event in the joined events set is added 
-    for event in events:
-        event["joined"] = event["id"] in joined_events_ids # Joined is a bool depending if the event id is in the joined events set
-        event["slug"] = slugify(event["name"]) # Creates a slug for the event so the name can be properly used in a link
-
-    events.sort(key=event_status) # Sorts based on the status returned
-
-    con.close()
+    events = get_events(0)
 
     return render_template("events.html", header="Events", events=events)
 
@@ -486,6 +453,46 @@ def event_action():
     return jsonify({"status": status}) # Returns the status for JS
 
 
+def get_events(pending):
+    con = sqlite3.connect("climbing.db")
+    con.row_factory = sqlite3.Row # Returns results as a dictionary or a tuple that can be indexed, I will use as a dict for easier indexing so instead of event[9] for image(or whatever index it is) I can simply do event["image"]
+
+    cur = con.cursor()
+    # Query gets all events info
+    cur.execute("""SELECT Event.id, Event.name, post_date, start_date, end_date, Event.description, 
+                Location.name AS location_name, Account.display_name, start_time, end_time, Event.pending, Event.image
+                FROM Event
+                JOIN Location ON Event.location_id = Location.id
+                JOIN Account ON Event.account_id = Account.id
+                WHERE Event.pending = ?;""", (pending,))
+    events = cur.fetchall()
+
+    # Converts the events sql dict into a python array of dicts so I can add values
+    events = [dict(event) for event in events]
+
+    # The joined events will be organised and ordered if the event isn't pending
+    if pending == 0:
+        # Sets joined events to none as it will only be needed if the user is logged in
+        joined_events_ids = set() # Sets don't have duplicates
+        if session.get("user_id"):
+            user_id = session.get("user_id")      
+
+            # Gets every event the user has joined
+            cur.execute("SELECT event_id FROM Account_Event WHERE account_id = ?;", (user_id,))
+            # Adds every event id from the query to the set
+            joined_events_ids = {row["event_id"] for row in cur.fetchall()}
+
+        # Adds a joined key to the events dict where every event in the joined events set is added 
+        for event in events:
+            event["joined"] = event["id"] in joined_events_ids # Joined is a bool depending if the event id is in the joined events set
+            event["slug"] = slugify(event["name"]) # Creates a slug for the event so the name can be properly used in a link
+
+        events.sort(key=event_status) # Sorts based on the status returned
+
+    con.close()
+    return events
+
+
 @app.route("/events/add-event", methods=["GET", "POST"])
 def add_event():
     locations = get_locations()
@@ -529,6 +536,12 @@ def add_event():
         return redirect(url_for("events"))
     else:
         return render_template("add-event.html", header="Events", locations=locations)
+
+
+@app.route("/events/add-results", methods=["GET", "POST"])
+def add_results():
+    print("results")
+    return 
 
 
 def parse_datetime(date, time):
@@ -606,18 +619,8 @@ def admin():
         row = [result[0], result[1], coords, result[3], result[4]]
         locations.append(row)
 
-    con.row_factory = sqlite3.Row # For dictionary access(I didn't know about this previously)
-    cur = con.cursor() # Must make a new cursor due to the change in the con
-
     # Gets all pending events
-    cur.execute("""SELECT Event.id, Event.name, start_date, end_date, Event.description, Event.full_description,
-                Location.name AS location_name, start_time, end_time, Event.image
-                FROM Event
-                JOIN Location ON Event.location_id = Location.id
-                JOIN Account ON Event.account_id = Account.id
-                WHERE Event.pending = 1;""")
-    results = cur.fetchall()
-    events = [dict(event) for event in results] # Turns it into a dictionary
+    events = get_events(1)
 
     con.close()
 

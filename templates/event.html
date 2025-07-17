@@ -63,8 +63,7 @@
                     {% endfor %}
                 </table>
             {% else %}
-            <p>{{user_id}}</p>
-                {% if user_id == event["host_id"] and partipants %}
+                {% if user_id == event["host_id"] and participants %}
                     <form action="{{ url_for('add_results') }}" method="POST">
                         <table class="results-table">
                             <!-- Header row, time only is displayed if it was given -->
@@ -76,8 +75,11 @@
                             <!-- Loops through results making a row for each participant -->
                             {% for user in participants %}
                                 <tr>
-                                    <td>Placing</td>
-                                    <input type="hidden" name="placing" id="placing" required>
+                                    <!-- Placement input field, must be a number, and is indexed by the currrent iteration-->
+                                    <td>
+                                        <input type="number" name="placing_{{loop.index}}" id="placing_{{loop.index}}" required>
+                                    </td>
+                                    
 
                                     {% if user["name"] %} <!-- Uses the users display name if they have one -->
                                         <td>{{user["name"]}}</td>
@@ -89,6 +91,11 @@
                                     <input type="number">
 
                                     <input type="hidden" name="account_id" id="account_id" value="{{user['id']}}">
+
+                                    <!-- Submit Button -->
+                                    <div class="form-group">
+                                        <button type="submit" class="button submit-button">Submit</button>
+                                    </div>
                                 </tr>
                             {% endfor %}
                         </table>

@@ -132,7 +132,6 @@
             const errorDiv = document.querySelector(".bolts-errors");
             if (value === "") { // If the value is empty then it returns true(bolts may be empty)
                 errorDiv.textContent = "";
-                boltsInput.value = "0"; // Sets default value to 0
                 return true;
             }
             const isValid = /^\d+$/.test(value); // Dumbest operator(?) I've ever seen, the regex, checks if the value is numeric, has at least the digits 0-9 so isn't negative, nor a float
