@@ -72,34 +72,34 @@
                                 <th>Name</th>
                                 <th>Time(optional)</th>
                             </tr>
-                            <!-- Loops through results making a row for each participant -->
-                            {% for user in participants %}
-                                <tr>
-                                    <!-- Placement input field, must be a number, and is indexed by the currrent iteration-->
-                                    <td>
-                                        <input type="number" name="placing_{{loop.index}}" id="placing_{{loop.index}}" required>
-                                    </td>
-                                    
-                                    {% if user["name"] %} <!-- Uses the users display name if they have one -->
-                                        <td>{{user["name"]}}</td>
-                                    {% else %} <!-- Uses the users username if they don't have a display name-->
-                                        <td>{{user["username"]}}</td>
-                                    {% endif %}
-                                    
-                                    <!-- Time input field, optional, and is indexed by the currrent iteration-->
-                                    <td>
-                                        <input type="text" name="time_{{loop.index}}" id="time_{{loop.index}}">
-                                    </td>
 
-                                    <input type="hidden" name="account_id" id="account_id" value="{{user['id']}}">
+                            <tbody id="results-form-table">
+                                <!-- Loops through results making a row for each participant -->
+                                {% for user in participants %}
+                                    <tr>
+                                        <!-- Placement input field, must be a number, and is indexed by the currrent iteration-->
+                                        <td class="placing">{{ loop.index }}</td>
+                                        
+                                        {% if user["name"] %} <!-- Uses the users display name if they have one -->
+                                            <td>{{user["name"]}}</td>
+                                        {% else %} <!-- Uses the users username if they don't have a display name-->
+                                            <td>{{user["username"]}}</td>
+                                        {% endif %}
+                                        
+                                        <!-- Time input field, optional, and is indexed by the currrent iteration-->
+                                        <td>
+                                            <input type="text" name="time_{{loop.index}}" id="time_{{loop.index}}">
+                                        </td>
 
-                                    <!-- Submit Button -->
-                                    <div class="form-group">
-                                        <button type="submit" class="button submit-button">Submit</button>
-                                    </div>
-                                </tr>
-                            {% endfor %}
+                                        <input type="hidden" name="account_id" id="account_id" value="{{user['id']}}">
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
                         </table>
+                        <!-- Submit Button -->
+                        <div class="form-group">
+                            <button type="submit" class="button submit-button">Submit</button>
+                        </div>
                     </form>
                 {% else %}
                     <h4 style="margin: auto;">No results yet, check back later</h4>
@@ -257,4 +257,25 @@
     </script>
 
     <script src="/static/js/join_leave.js"></script>
+
+    <!-- SortableJS library will be used for drag and dropping result publishing -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script>
+        // Adds sortable functionality to table, and updates placing numbers when animation is ended
+        const sortable = new Sortable(document.getElementById("results-form-table"), {
+            animation: 150,
+            onEnd: updatePlacings
+        });
+        
+        // Updates placing numbers after a drag and drop reorder(based on the rows new order)
+        function updatePlacings() {
+            const rows = document.querySelectorAll("#results-form-table tr");
+            rows.forEach((row, index) => {
+                row.querySelector(".placing").textContent = index + 1;
+            });
+        }
+
+        // Runs on page load to update placings
+        updatePlacings();
+    </script>
 {% endblock %}
