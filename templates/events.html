@@ -17,13 +17,16 @@
         {% for event in events %}
             <!-- The div that displays the events info -->
             <div class="event">
+                {% if event["joined"] %}
+                    <p class="joined-sticker">Joined</p>
+                {% endif %}
+
                 <div class="event-top-info">
                     <div>{{ event["post_date"] }}</div>
-                    <div>Created by {{ event["display_name"] }}</div>
                 </div>
 
                 <h4>{{ event["name"] }}</h4>
-
+                
                 <div class="event-body">
                     <img src="{{ event['image'] }}" alt="Event image">
 
@@ -41,6 +44,7 @@
                         <p style="margin-top: 10px;"><strong>{{ event["location_name"] }}</strong></p>
                         <!-- Flask stores text area new lines as \n so we convert them to <br> and then they will display -->
                         <p class="description" >{{ event["description"] | replace('\n', '<br>') | safe }}</p> 
+                        <div style="margin: 20px auto; font-weight: 600;">Created by {{ event["display_name"] }}</div>
                         
                         <!-- Div with the buttons for the event -->
                         <div class="event-buttons" style="margin-top: auto;">
@@ -61,9 +65,10 @@
                                             <button type="submit" name="action" value="login" class="button">Login to Join Events</button>
                                         {% endif %}
                                     </div>
-                                    
+                                
                                     <!-- More info button leads to the specific events page -->
-                                    <a class="more-info-button" href="/events/{{ event['slug'] }}?id={{ event['id'] }}">More Info</a>
+                                    <a class="more-info-button" href="/events/{{ event['slug'] }}?id={{ event['id'] }}" 
+                                    style="margin-top: 0;">More Info</a>
 
                                     <input type="hidden" id="event_id" name="event_id" value="{{ event['id'] }}">
                                 </div>

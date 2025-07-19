@@ -80,15 +80,16 @@
                                         <input type="number" name="placing_{{loop.index}}" id="placing_{{loop.index}}" required>
                                     </td>
                                     
-
                                     {% if user["name"] %} <!-- Uses the users display name if they have one -->
                                         <td>{{user["name"]}}</td>
                                     {% else %} <!-- Uses the users username if they don't have a display name-->
                                         <td>{{user["username"]}}</td>
                                     {% endif %}
-
-                                    <td>Time(optional)</td>
-                                    <input type="number">
+                                    
+                                    <!-- Time input field, optional, and is indexed by the currrent iteration-->
+                                    <td>
+                                        <input type="text" name="time_{{loop.index}}" id="time_{{loop.index}}">
+                                    </td>
 
                                     <input type="hidden" name="account_id" id="account_id" value="{{user['id']}}">
 

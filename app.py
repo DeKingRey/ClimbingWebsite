@@ -37,9 +37,8 @@ app.config["UPLOADED_PHOTOS_DEST"] = "uploads"
 
 bcrypt = Bcrypt(app)
 
-# This is the variable which will hold the correct file type for images, getting the IMAGES variable which holds file types like png, jpg, gif, etc. It makes an upload set which is something which only allows certain file types(which is defined with the second parameter)
+# Sets image upload settings
 photos = UploadSet("photos", IMAGES)
-# This configured the upload sets to the app, so will add previously defined 'photos' as one of the upload sets for this app
 configure_uploads(app, photos)
 
 
@@ -53,7 +52,7 @@ def NoSpaces(message):
 
 # This creates a class which can be used to make forms(specifically for accounts)
 class RegisterForm(FlaskForm):
-    # Creates the name field which has to have input to be valid
+    # Username field with validation for length and profanitys
     name = StringField("Name", validators=[DataRequired("Field should not be empty"),
                                            NoneOf(BANNED_WORDS, message="Please avoid using inappropriate language"),
                                            Length(min=3, max=20, message="Username must be between 3 and 20 characters long"),
@@ -65,27 +64,22 @@ class RegisterForm(FlaskForm):
         Length(min=8, max=32, message="Password must be between 8 and 32 characters long"),
         NoSpaces(message="Password must not contain spaces")
         ])
-    # Confirms that the user inputed the correct password by checking if it's the same as the previously defined Password
+    # Validatation of confirm password field matching password
     confirm_password = PasswordField("Confirm_Password", validators=[EqualTo("password", "Passwords are not matching")])
-    # Creates a file field where the profile picture can be uploaded
+    # Creates a file field where the profile picture can be optionally uploaded
     photo = FileField(
         validators= [
             # Only allows the file types in the 'photos' upload set
             FileAllowed(photos, "Invalid file type"),
-            # Is optional so the field can be empty and other errors will be ignored
             Optional()
         ]
     )
 
-    # Creates the submit button which will check and validate the inputted data
+    # Submit validation button
     submit = SubmitField("Register")
 
 
-# Currently the API does not work so I will wait through the holidays to see if it continues to be like this
-map_routes_url = "https://climbnz.org.nz/api/routes"
-
-
-# These variables will be able to be accessed on every render template instead of manually inputting in every render
+# Inject user session info into all templates
 @app.context_processor
 def inject_user():
     return {
@@ -369,53 +363,49 @@ def event(event):
                 JOIN Location ON Event.location_id = Location.id
                 JOIN Account ON Event.account_id = Account.id
                 WHERE Event.pending = 0 AND Event.id == ?;""", (id,))
-    event = cur.fetchone()
+    event_data = cur.fetchone()
     
     # Will be used to find whether the user has joined the event
     cur.execute("SELECT event_id FROM Account_Event WHERE account_id = ? AND event_id = ?;", (session.get("user_id"), id,))
     joined = cur.fetchone()
 
-    event = dict(event) # Turns event into an actual dict
+    event_dict = dict(event_data) # Turns event into a dict
     if joined != None:
-        event["joined"] = True
+        event_dict["joined"] = True
     else:
-        event["joined"] = False
+        event_dict["joined"] = False
 
-    status = event_status(event) # Gets the status of the event
-    #event["concluded"] = False
+    status = event_status(event_dict) # Gets the status of the event
     results = dict()
     participants = dict()
+
+    # If the event is concluded get the result info
     if status == 4:
-        # Gets the result info if the event is concluded
         cur.execute("""SELECT ae.placing, a.display_name AS name, a.username, ae.time, a.id
                 FROM Account_Event ae
                 JOIN Account a ON ae.account_id = a.id
                 WHERE ae.event_id = ?;""", (id,))
         data = cur.fetchall()
         data_dict = [dict(info) for info in data]
-        if data_dict[0]["placing"]:
-            results = [dict(result) for result in data] # Converts to an array of dictionaries
 
-            # Uses the lambda function to sort by the placement of the participant
-            results.sort(key=lambda item: item["placing"]) # Lambdas are a temporary function used when the function is short and cleaner to do one one line once
+        # If the results are available order and suffix the placings for table visibility
+        if data_dict[0].get("placing"):
+            results = sorted(data_dict, key=lambda item: item["placing"])
 
-            # Adds the placing suffix e.g. 1st, 2nd, 3rd, 4th
             for result in results:
-                if result["placing"]:
-                    result["placing"] = placing_suffix(result["placing"])
+                result["placing"] = placing_suffix(result["placing"])
         else:
-            participants = [dict(participant) for participant in data]
+            participants = data_dict
     
     con.close()
 
-    return render_template("event.html", event=event, results=results, participants=participants)
+    return render_template("event.html", event=event_dict, results=results, participants=participants)
 
 
 @app.route("/event-action", methods=["POST"])
 def event_action():
     # This will handle the functionality of the buttons on each event
 
-    # Gets all the values
     action = request.form.get("action") # Gets the buttons action
     account_id = session.get("user_id")
     event_id = request.form.get("event_id")
@@ -448,7 +438,7 @@ def event_action():
 
 def get_events(pending):
     con = sqlite3.connect("climbing.db")
-    con.row_factory = sqlite3.Row # Returns results as a dictionary or a tuple that can be indexed
+    con.row_factory = sqlite3.Row # Returns results as a dictionary to be accessed easier for me
 
     cur = con.cursor()
     # Gets all events info
@@ -470,12 +460,11 @@ def get_events(pending):
         if session.get("user_id"):
             user_id = session.get("user_id")      
 
-            # Gets every event the user has joined
+            # Gets every event the user has joined and adds their ids to a set
             cur.execute("SELECT event_id FROM Account_Event WHERE account_id = ?;", (user_id,))
-            # Adds every event id from the query to the set
             joined_events_ids = {row["event_id"] for row in cur.fetchall()}
 
-        # Adds a joined key to the events dict which is used to tell whether the event is joined by the user or not
+        # Adds joined events keys to the events dict 
         for event in events:
             event["joined"] = event["id"] in joined_events_ids
             event["slug"] = slugify(event["name"]) # Creates a slug for the event so the name can be properly used in a link
@@ -724,20 +713,21 @@ def edit_account():
     errors = {"username": [],
                 "display_name": [],
                 "profile_picture": []
-                } # Dictionary of errors
+                }
     if request.method == "POST":
         action = request.form.get("action")
 
+        # Validates then applies edits made
         if action == "apply":
             username = request.form.get("username").strip()
             display_name = request.form.get("display_name").strip()
 
+            # Checks if user and display name are correct length, not profanic, and are inputted
             if profanity_check(username):
-                errors["username"].append("Username contains inappropriate language.") # Makes sure the username and display name aren't innappropriate
+                errors["username"].append("Username contains inappropriate language.")
             if not username:
                 errors["username"].append("Username cannot be empty.")
 
-            # Makes sure the username isn't too short or too long
             if len(username) > 20: 
                 errors["username"].append("Username must be under 20 characters long")
             if len(username) < 3:
@@ -748,37 +738,39 @@ def edit_account():
             if not display_name:
                 display_name = username
 
-            # Makes sure the display name isn't too short or too long
             if len(display_name) > 20: 
                 errors["display_name"].append("Display name must be under 20 characters long")
             if len(display_name) < 3:
                 errors["display_name"].append("Display name must be over 3 characters long")
 
-            if not any(errors.values()): # Only runs if there are no errors 
+            # If names are error free
+            if not any(errors.values()):
                 try:
-                    profile_picture = request.files.get("image") # Gets all the inputs and strips them
+                    profile_picture = request.files.get("image")
 
-                    if profile_picture and profile_picture.filename != "": # Makes sure the profile picture was updated
-                        filename = photos.save(profile_picture) # Saves the pfp to uploads
-                        file_url = url_for("get_file", filename=filename) # Gets the url for it 
+                    # Checks if the profile picture was updated and saves it
+                    if profile_picture and profile_picture.filename != "":
+                        filename = photos.save(profile_picture)
+                        file_url = url_for("get_file", filename=filename) 
                     else:
-                        file_url = request.form.get("current_profile") # If the pfp wasn't updated it stays as the current
+                        file_url = request.form.get("current_profile") # Set pfp to the current if unchanged
 
                     con = sqlite3.connect("climbing.db")
                     cur = con.cursor()
 
+                    # Updates account info
                     cur.execute("UPDATE Account SET username = ?, display_name = ?, profile_picture = ? WHERE username = ?", 
-                                (username, display_name, file_url, session.get("username"))) # Updates the account with the new info
+                                (username, display_name, file_url, session.get("username")))
                     con.commit()
                     con.close()
 
                     session["profile_picture"] = file_url
                     session["username"] = username
-                    session["display_name"] = display_name # Sets the new inputs
+                    session["display_name"] = display_name 
 
                     return redirect(url_for("account"))
-                except sqlite3.IntegrityError:
-                    errors["username"].append("This username is already taken") # If there is an error, the username is not unique
+                except sqlite3.IntegrityError: # Ensures username is unique
+                    errors["username"].append("This username is already taken")
         else: 
             return redirect(url_for("account"))
 
@@ -801,26 +793,23 @@ def register():
         password = wtf_form.password.data
         date = request.form.get("local_date")
         
-        # This hashes the password making it secure and able to be stored in a database. Hashed things cannot be unhashed so it is quite secure
+        # Secures password by hashing it to avoid issues
         hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
         
         try:
-            # This saves the photos file in the uploads folder
+            # Save profile if provided
             if wtf_form.photo.data != None:
-                # This saves the file in the uploads folder and gets the filename
                 filename = photos.save(wtf_form.photo.data)
-            else:
+            else: 
                 # Guest Profile Picture
-                # If there is no photo input then the users profile picture will be set to the guest profile picture
                 filename = "magnus.png"
-            # This will get the files url from the get_file() function
             file_url = url_for("get_file", filename=filename)
 
-            # This executes an SQL stament which adds the users registry information to the database
+            # Adds user to database
             cur.execute("INSERT INTO Account (username, password, profile_picture, permission_level, display_name, date) VALUES (?, ?, ?, 1, ?, ?)", (name, hashed_password, file_url, name, date))
             con.commit()
 
-            session["user_id"] = cur.lastrowid # Auto logs in by getting the id of the last inserted row
+            session["user_id"] = cur.lastrowid # Auto logs in so user doesn't have to
             return redirect(url_for("home"))
         except sqlite3.IntegrityError:
             wtf_form.name.errors.append("That username is already taken")
@@ -830,35 +819,29 @@ def register():
 
 @app.route("/uploads/<filename>")
 def get_file(filename):
-    # This will create a link for the file from the uploads folder directory using the filename
+    # Gets the link directory of the file
     return send_from_directory(app.config["UPLOADED_PHOTOS_DEST"], filename)
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    # Sets error to None in case there are no errors
     error = None
 
-    # Checks if their is a post request
+    # Verifies login 
     if request.method == "POST":
-        # Sets the username and password to the inputted data
         username = request.form.get("username")
         password = request.form.get("password") 
 
-        # Connects to the database
         con = sqlite3.connect("climbing.db")
         cur = con.cursor()
-        # Checks if user is in database
         cur.execute("SELECT id, password FROM Account WHERE username = ?;", (username,))
         result = cur.fetchone()
-    
+
+        # Ensures user is in database
         if result:
             correct_password = result[1]
-            # Checks if the inputted password matches the stored hashed password
             if check_password_hash(correct_password, password):
-                # Saves the user's id to the session so it can be used anywhere, though is cleared when they leave the website 
                 session["user_id"] = result[0]
-                # Redirects the user to home
                 return redirect(url_for("home"))
             else:
                 error = "Password is incorrect."
