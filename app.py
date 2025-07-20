@@ -378,28 +378,26 @@ def event(event):
     status = event_status(event_dict) # Gets the status of the event
     results = dict()
     participants = dict()
+    no_results = False
 
     # If the event is concluded get the result info
     if status == 4:
-        cur.execute("""SELECT ae.placing, a.display_name AS name, a.username, ae.time, a.id
-                FROM Account_Event ae
-                JOIN Account a ON ae.account_id = a.id
-                WHERE ae.event_id = ?;""", (id,))
-        data = cur.fetchall()
-        data_dict = [dict(info) for info in data]
+        results_data = get_results(id)
 
-        # If the results are available order and suffix the placings for table visibility
-        if data_dict[0].get("placing"):
-            results = sorted(data_dict, key=lambda item: item["placing"])
-
-            for result in results:
-                result["placing"] = placing_suffix(result["placing"])
+        # Prevent error from participantless event
+        if results_data:
+            # Checks whether the results are published or not
+            if results_data[0].get("placing"):
+                results = results_data
+            else:
+                participants = results_data # Will be used in the publish results form
+                session["current_event_id"] = id # Saves id for publishing results validation
         else:
-            participants = data_dict
+            no_results = True
     
     con.close()
 
-    return render_template("event.html", event=event_dict, results=results, participants=participants)
+    return render_template("event.html", event=event_dict, results=results, participants=participants, no_results=no_results)
 
 
 @app.route("/event-action", methods=["POST"])
@@ -523,8 +521,76 @@ def add_event():
 
 @app.route("/events/add-results", methods=["GET", "POST"])
 def add_results():
-    print("results")
-    return 
+    event_id = session.get("current_event_id") # Gets the current events id server side
+    errors = {}
+
+    # Will validate and publish results to database
+    if request.method == "POST":
+        # Gets the ID's that have joined the event to validate later
+        valid_info = get_results(event_id)
+        valid_ids = [str(p["id"]) for p in valid_info]
+
+        results = []
+        i  = 1
+
+        # If time is inputted once it must be inputted everywhere else
+        time_required = False
+        if request.form.get("time_1"):
+            time_required = True
+
+        # Loops through all result entries
+        while True:
+            account_id = request.form.get(f"account_id_{i}")
+            time = request.form.get(f"time_{i}")
+
+            # Breaks when it doesn't get an account id(no more participants)
+            if not account_id:
+                break
+                
+            # Prevents altering account_id value to an ID not in the event
+            if account_id not in valid_ids:
+                errors[f"account_id_{i}"] = "Invalid participant ID"
+            
+            # Handles time errors
+            if time:
+                time_required = True
+            if time_required and not time: # If time is inputted anywhere but not provided in one spot
+                errors[f"time"] = "Time must be filled in if provided anywhere"
+            
+            # Appends a dict of the results
+            results.append({
+                "account_id": int(account_id),
+                "placing": i,
+                "time": time if time_required else None
+            })
+            i += 1
+        if not errors:
+
+    return render_template()
+
+
+def get_results(id):
+    con = sqlite3.connect("climbing.db")
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+
+    cur.execute("""SELECT ae.placing, a.display_name AS name, a.username, ae.time, a.id
+            FROM Account_Event ae
+            JOIN Account a ON ae.account_id = a.id
+            WHERE ae.event_id = ?;""", (id,))
+    data = cur.fetchall()
+    data_dict = [dict(info) for info in data]
+    
+    results = dict()
+    # If the results are available order and suffix the placings for table visibility
+    if data_dict:
+        if data_dict[0].get("placing"):
+            results = sorted(data_dict, key=lambda item: item["placing"])
+
+            for result in results:
+                result["placing"] = placing_suffix(result["placing"])
+            return results
+    return data_dict # Either list of participants, or None(if no participants)
 
 
 def parse_datetime(date, time):

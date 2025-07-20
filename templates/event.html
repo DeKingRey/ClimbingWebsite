@@ -77,12 +77,13 @@
                                 <!-- Loops through results making a row for each participant -->
                                 {% for user in participants %}
                                     <tr>
-                                        <!-- Placement input field, must be a number, and is indexed by the currrent iteration-->
+                                        <!-- Placement number which will be updated based on sorting order-->
                                         <td class="placing">{{ loop.index }}</td>
                                         
-                                        {% if user["name"] %} <!-- Uses the users display name if they have one -->
+                                        <!-- Displays the participants name, first display name and if that's not available then username -->
+                                        {% if user["name"] %} 
                                             <td>{{user["name"]}}</td>
-                                        {% else %} <!-- Uses the users username if they don't have a display name-->
+                                        {% else %}
                                             <td>{{user["username"]}}</td>
                                         {% endif %}
                                         
@@ -90,8 +91,8 @@
                                         <td>
                                             <input type="text" name="time_{{loop.index}}" id="time_{{loop.index}}">
                                         </td>
-
-                                        <input type="hidden" name="account_id" id="account_id" value="{{user['id']}}">
+                                        
+                                        <input type="hidden" name="account_id_{{loop.index}}" id="account_id" value="{{user['id']}}">
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -102,7 +103,11 @@
                         </div>
                     </form>
                 {% else %}
-                    <h4 style="margin: auto;">No results yet, check back later</h4>
+                    {% if no_results%}
+                        <h4 style="margin: auto;">No participants joined this event, results unavailable</h4>
+                    {% else %}
+                        <h4 style="margin: auto;">No results yet, check back later</h4>
+                    {% endif %}
                 {% endif %}
             {% endif %}
         </div>
