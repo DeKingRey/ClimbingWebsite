@@ -87,10 +87,13 @@
                                             <td>{{user["username"]}}</td>
                                         {% endif %}
                                         
-                                        <!-- Time input field, optional, and is indexed by the currrent iteration-->
-                                        <td>
-                                            <input type="text" name="time_{{loop.index}}" id="time_{{loop.index}}"
-                                            value="{{ request.form.get('time_') ~ loop.index|string, ''}}"> <!-- Autofills value if already submitted -->
+                                        <!-- Optional time input fields for mins and secs -->
+                                        <td style="display: flex; justify-content: center; align-items: end;">
+                                            <input type="number" name="time_mins_{{loop.index}}" id="time_mins_{{loop.index}}" max="100">
+                                            <p style="font-size: 10px;">mins</p>
+                                            <p>:</p>
+                                            <input type="number" name="time_secs_{{loop.index}}" id="time_secs_{{loop.index}}" max="59">
+                                            <p style="font-size: 10px;">secs</p>
 
                                             {% if errors.get("time_" ~ loop.index) %} <!-- Displays the fields potential errors -->
                                                 <div class="form-error">{{ errors["time_" ~ loop.index] }}</div>

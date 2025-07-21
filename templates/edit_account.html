@@ -14,7 +14,7 @@
             <!-- Username edit -->
             <div class="form-group" style="width: 40%;">
                 <label for="username"><strong>Username</strong> - {{ username }}</label>
-                <input type="text" name="username" id="username" value="{{ username }}"> 
+                <input type="text" name="username" id="username" value="{{ username }}" minlength="3" maxlength="20"> 
 
                 {% if errors["username"] != [] %} <!-- Displays the fields potential errors -->
                     {% for error in errors["username"] %}
@@ -26,7 +26,7 @@
             <!-- Display name edit -->
             <div class="form-group" style="width: 40%;">
                 <label for="display_name"><strong>Display Name</strong> - {{ display_name }}</label>
-                <input type="text" name="display_name" id="display_name" value="{{ display_name }}"> 
+                <input type="text" name="display_name" id="display_name" value="{{ display_name }}" minlength="3" maxlength="20"> 
 
                 {% if errors["display_name"] != [] %} <!-- Displays the fields potential errors -->
                     {% for error in errors["display_name"] %}

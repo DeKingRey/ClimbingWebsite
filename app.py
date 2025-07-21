@@ -368,7 +368,13 @@ def event(event_slug):
         # Loops through all result entries
         while True:
             account_id = request.form.get(f"account_id_{i}")
-            time = request.form.get(f"time_{i}")
+
+            time_secs = request.form.get(f"time_secs_{i}")
+            time_mins = request.form.get(f"time_secs_{i}")
+
+            if not time_mins.isnumeric or not time_secs.isnumeric:
+                errors[f"time_{i}"] = "Time must be a numeric value"
+            time = f"{time_mins}:{time_secs}"
 
             # Breaks when it doesn't get an account id(no more participants)
             if not account_id:
