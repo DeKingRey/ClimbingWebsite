@@ -547,7 +547,7 @@ def add_results():
             if not account_id:
                 break
                 
-            # Prevents altering account_id value to an ID not in the event
+            # Prevents altering account_id value to an ID not in t  he event
             if account_id not in valid_ids:
                 errors[f"account_id_{i}"] = "Invalid participant ID"
             
@@ -564,7 +564,20 @@ def add_results():
                 "time": time if time_required else None
             })
             i += 1
+
+        # If there are no errors then the data will be inserted
         if not errors:
+            con = sqlite3.connect("climbing.db")
+            cur = con.cursor()
+            
+            # Inserts each result iteratively
+            for result in results:
+                if time_required:
+                    cur.execute("INSERT INTO Account_Event (placing, time) VALUES (?, ?);", (result["placing"], result["time"],))
+                else:
+                    cur.execute("INSERT INTO Account_Event (placing) VALUES (?);", (result["placing"],))
+            con.commit()
+            con.close()
 
     return render_template()
 
