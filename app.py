@@ -365,16 +365,32 @@ def event(event_slug):
             time_required = True
 
         i = 1
+        errors[f"time_{i}"] = []
         # Loops through all result entries
         while True:
+            errors[f"time_{i}"] = []
             account_id = request.form.get(f"account_id_{i}")
 
+            time_mins = request.form.get(f"time_mins_{i}")
             time_secs = request.form.get(f"time_secs_{i}")
-            time_mins = request.form.get(f"time_secs_{i}")
 
-            if not time_mins.isnumeric or not time_secs.isnumeric:
-                errors[f"time_{i}"] = "Time must be a numeric value"
-            time = f"{time_mins}:{time_secs}"
+            # Validates time inputs
+            if time_mins and time_secs:
+                # Ensures time inputs are a number
+                if not time_mins.isnumeric() or not time_secs.isnumeric():
+                    errors[f"time_{i}"].append("Time must be a numeric value")    
+                else:
+                    # Ensures time inputs aren't too long or negative
+                    mins = int(time_mins)
+                    secs = int(time_secs)
+                    if not (0 <= mins <= 100) or not (0 <= secs <= 59):
+                        errors[f"time_{i}"].append("Time must be a valid input")
+                    
+                    # Forms the time string if both inputs are gotten
+                    time = f"{time_mins}:{secs:02d}"
+                time = f"{time_mins}:{time_secs}" # Still forms time if there are errors to prevent an unecessary none error display
+            else:
+                time = None
 
             # Breaks when it doesn't get an account id(no more participants)
             if not account_id:
@@ -388,7 +404,7 @@ def event(event_slug):
             if time:
                 time_required = True
             if time_required and not time: # If time is inputted anywhere but not provided in one spot
-                errors[f"time_{i}"] = "Time must be filled in if provided anywhere"
+                errors[f"time_{i}"].append("Time must be filled in if provided anywhere")
             
             # Appends a dict of the results
             submitted_results.append({
@@ -399,6 +415,7 @@ def event(event_slug):
             i += 1
 
         # If there are no errors then the data will be inserted
+        print(f"Time Required: {time_required}, Errors: {errors}")
         if not errors:
             con = sqlite3.connect("climbing.db")
             cur = con.cursor()
