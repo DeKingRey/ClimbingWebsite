@@ -5,14 +5,12 @@ By Miguel Monreal on 27/03/25"""
 import sqlite3
 import requests
 import os 
-import instructor
-from openai import OpenAI
 from dotenv import load_dotenv
 from datetime import datetime 
 load_dotenv()
 
 
-from flask import Flask, render_template, redirect, url_for, send_from_directory, request, session, jsonify
+from flask import Flask, render_template, redirect, url_for, send_from_directory, request, session, jsonify, flash
 
 from flask_bcrypt import Bcrypt, check_password_hash
 from flask_uploads import UploadSet, IMAGES, configure_uploads
@@ -24,9 +22,6 @@ from wtforms import StringField, PasswordField, SubmitField
 from slugify import slugify
 
 from banned_words import BANNED_WORDS
-#from profanity_filter import ProfanityFilter
-
-from atomic_agents.agents.base_agent import  BaseAgent, BaseAgentConfig, BaseAgentInputSchema
 
 
 app = Flask(__name__)
@@ -347,13 +342,72 @@ def events():
     return render_template("events.html", header="Events", events=events)
 
 
-@app.route("/events/<string:event>")
-def event(event):
+@app.route("/events/<string:event_slug>", methods=["GET", "POST"])
+def event(event_slug):
     con = sqlite3.connect("climbing.db")
     con.row_factory = sqlite3.Row
     cur = con.cursor()
 
-    id = request.args.get("id")
+    event_id = request.args.get("id")
+
+    errors = {}
+    submitted_results = []
+
+    # Will validate and publish results to database
+    if request.method == "POST":
+        # Gets the ID's that have joined the event to validate later
+        valid_info = get_results(event_id)
+        valid_ids = [str(p["id"]) for p in valid_info]
+
+        # If time is inputted once it must be inputted everywhere else
+        time_required = False
+        if request.form.get("time_1"):
+            time_required = True
+
+        i = 1
+        # Loops through all result entries
+        while True:
+            account_id = request.form.get(f"account_id_{i}")
+            time = request.form.get(f"time_{i}")
+
+            # Breaks when it doesn't get an account id(no more participants)
+            if not account_id:
+                break
+                
+            # Prevents altering account_id value to an ID not in t  he event
+            if account_id not in valid_ids:
+                errors[f"account_id_{i}"] = "Invalid participant ID"
+            
+            # Handles time errors
+            if time:
+                time_required = True
+            if time_required and not time: # If time is inputted anywhere but not provided in one spot
+                errors[f"time_{i}"] = "Time must be filled in if provided anywhere"
+            
+            # Appends a dict of the results
+            submitted_results.append({
+                "account_id": int(account_id),
+                "placing": i,
+                "time": time if time_required else None
+            })
+            i += 1
+
+        # If there are no errors then the data will be inserted
+        if not errors:
+            con = sqlite3.connect("climbing.db")
+            cur = con.cursor()
+            
+            # Inserts each result iteratively
+            for result in submitted_results:
+                if time_required:
+                    cur.execute("UPDATE Account_Event SET placing = ?, TIME = ? WHERE account_id = ? AND event_id = ?;", 
+                                (result["placing"], result["time"], result["account_id"], event_id))
+                else: # If time is not inputted 
+                    cur.execute("UPDATE Account_Event SET placing = ?WHERE account_id = ? AND event_id = ?;",
+                                (result["placing"], result["account_id"], event_id))
+            con.commit()
+            con.close()
+            return redirect(url_for("event", event_slug=event_slug, id=event_id))
 
     # Gets all the events info
     cur.execute("""SELECT Event.id, Event.name, post_date, start_date, end_date, Event.description, Event.full_description,
@@ -362,18 +416,19 @@ def event(event):
                 FROM Event
                 JOIN Location ON Event.location_id = Location.id
                 JOIN Account ON Event.account_id = Account.id
-                WHERE Event.pending = 0 AND Event.id == ?;""", (id,))
+                WHERE Event.pending = 0 AND Event.id == ?;""", (event_id,))
     event_data = cur.fetchone()
     
     # Will be used to find whether the user has joined the event
-    cur.execute("SELECT event_id FROM Account_Event WHERE account_id = ? AND event_id = ?;", (session.get("user_id"), id,))
+    cur.execute("SELECT event_id FROM Account_Event WHERE account_id = ? AND event_id = ?;", (session.get("user_id"), event_id,))
     joined = cur.fetchone()
 
     event_dict = dict(event_data) # Turns event into a dict
-    if joined != None:
-        event_dict["joined"] = True
-    else:
-        event_dict["joined"] = False
+
+    # Sets the joined bool to determine whether the event is joined by the user or not
+    event_dict["joined"] = joined is not None
+
+    event_dict["slug"] = event_slug
 
     status = event_status(event_dict) # Gets the status of the event
     results = dict()
@@ -382,7 +437,7 @@ def event(event):
 
     # If the event is concluded get the result info
     if status == 4:
-        results_data = get_results(id)
+        results_data = get_results(event_id)
 
         # Prevent error from participantless event
         if results_data:
@@ -391,13 +446,20 @@ def event(event):
                 results = results_data
             else:
                 participants = results_data # Will be used in the publish results form
-                session["current_event_id"] = id # Saves id for publishing results validation
         else:
             no_results = True
     
     con.close()
 
-    return render_template("event.html", event=event_dict, results=results, participants=participants, no_results=no_results)
+    return render_template(
+        "event.html", 
+        event=event_dict, 
+        results=results, 
+        participants=participants, 
+        no_results=no_results, 
+        errors=errors,
+        submitted_results=submitted_results
+    )
 
 
 @app.route("/event-action", methods=["POST"])
@@ -517,69 +579,6 @@ def add_event():
         return redirect(url_for("events"))
     else:
         return render_template("add-event.html", header="Events", locations=locations)
-
-
-@app.route("/events/add-results", methods=["GET", "POST"])
-def add_results():
-    event_id = session.get("current_event_id") # Gets the current events id server side
-    errors = {}
-
-    # Will validate and publish results to database
-    if request.method == "POST":
-        # Gets the ID's that have joined the event to validate later
-        valid_info = get_results(event_id)
-        valid_ids = [str(p["id"]) for p in valid_info]
-
-        results = []
-        i  = 1
-
-        # If time is inputted once it must be inputted everywhere else
-        time_required = False
-        if request.form.get("time_1"):
-            time_required = True
-
-        # Loops through all result entries
-        while True:
-            account_id = request.form.get(f"account_id_{i}")
-            time = request.form.get(f"time_{i}")
-
-            # Breaks when it doesn't get an account id(no more participants)
-            if not account_id:
-                break
-                
-            # Prevents altering account_id value to an ID not in t  he event
-            if account_id not in valid_ids:
-                errors[f"account_id_{i}"] = "Invalid participant ID"
-            
-            # Handles time errors
-            if time:
-                time_required = True
-            if time_required and not time: # If time is inputted anywhere but not provided in one spot
-                errors[f"time"] = "Time must be filled in if provided anywhere"
-            
-            # Appends a dict of the results
-            results.append({
-                "account_id": int(account_id),
-                "placing": i,
-                "time": time if time_required else None
-            })
-            i += 1
-
-        # If there are no errors then the data will be inserted
-        if not errors:
-            con = sqlite3.connect("climbing.db")
-            cur = con.cursor()
-            
-            # Inserts each result iteratively
-            for result in results:
-                if time_required:
-                    cur.execute("INSERT INTO Account_Event (placing, time) VALUES (?, ?);", (result["placing"], result["time"],))
-                else:
-                    cur.execute("INSERT INTO Account_Event (placing) VALUES (?);", (result["placing"],))
-            con.commit()
-            con.close()
-
-    return render_template()
 
 
 def get_results(id):

@@ -64,7 +64,7 @@
                 </table>
             {% else %}
                 {% if user_id == event["host_id"] and participants %}
-                    <form action="{{ url_for('add_results') }}" method="POST">
+                    <form action="{{ url_for('event', event_slug=event['slug'], id=event['id']) }}" method="POST">
                         <table class="results-table">
                             <!-- Header row, time only is displayed if it was given -->
                             <tr>
@@ -89,10 +89,18 @@
                                         
                                         <!-- Time input field, optional, and is indexed by the currrent iteration-->
                                         <td>
-                                            <input type="text" name="time_{{loop.index}}" id="time_{{loop.index}}">
+                                            <input type="text" name="time_{{loop.index}}" id="time_{{loop.index}}"
+                                            value="{{ request.form.get('time_') ~ loop.index|string, ''}}"> <!-- Autofills value if already submitted -->
+
+                                            {% if errors.get("time_" ~ loop.index) %} <!-- Displays the fields potential errors -->
+                                                <div class="form-error">{{ errors["time_" ~ loop.index] }}</div>
+                                            {% endif %}
                                         </td>
                                         
-                                        <input type="hidden" name="account_id_{{loop.index}}" id="account_id" value="{{user['id']}}">
+                                        <input type="hidden" name="account_id_{{loop.index}}" value="{{user['id']}}">
+                                        {% if errors.get("account_id_" ~ loop.index) %} <!-- Displays the fields potential errors -->
+                                            <div class="form-error">{{ errors["account_id_" ~ loop.index] }}</div>
+                                        {% endif %}
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -101,7 +109,7 @@
                         <div class="form-group">
                             <button type="submit" class="button submit-button">Submit</button>
                         </div>
-                    </form>
+                    </form> 
                 {% else %}
                     {% if no_results%}
                         <h4 style="margin: auto;">No participants joined this event, results unavailable</h4>
@@ -261,6 +269,7 @@
         }
     </script>
 
+    <!-- Script handles joining/leaving event -->
     <script src="/static/js/join_leave.js"></script>
 
     <!-- SortableJS library will be used for drag and dropping result publishing -->
