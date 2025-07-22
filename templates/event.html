@@ -1,7 +1,7 @@
 {% extends 'layout.html' %}
 {% block content %}
     <!-- This will be the container with the info -->
-    <div class="event-info-container" style="width: 50%;">
+    <div class="event-info-container" style="width: 60%;">
         <!-- The header info for the event -->
         <div style="display: flex; gap: 12px; justify-content: center;">
             <h3 style="margin-bottom: 15px;">{{ event["name"] }}</h3>
@@ -64,13 +64,16 @@
                 </table>
             {% else %}
                 {% if user_id == event["host_id"] and participants %}
-                    <form action="{{ url_for('event', event_slug=event['slug'], id=event['id']) }}" method="POST">
-                        <table class="results-table">
+                    <form action="{{ url_for('event', event_slug=event['slug'], id=event['id']) }}" method="POST" style="margin: 0 auto; width: 80%;">
+                        <table class="results-table" style="width: 100%;">
                             <!-- Header row, time only is displayed if it was given -->
                             <tr>
                                 <th>Placing</th>
                                 <th>Name</th>
                                 <th>Time(optional)</th>
+                                {% if errors["has_time_errors"] %} 
+                                    <th>Time Errors</th>
+                                {% endif %}
                             </tr>
 
                             <tbody id="results-form-table">
@@ -81,34 +84,40 @@
                                         <td class="placing">{{ loop.index }}</td>
                                         
                                         <!-- Displays the participants name, first display name and if that's not available then username -->
-                                        {% if user["name"] %} 
-                                            <td>{{user["name"]}}</td>
-                                        {% else %}
-                                            <td>{{user["username"]}}</td>
-                                        {% endif %}
-                                        
-                                        <!-- Optional time input fields for mins and secs -->
-                                        <td style="display: flex; justify-content: center; align-items: end;">
-                                            <input type="number" name="time_mins_{{loop.index}}" id="time_mins_{{loop.index}}" max="100" min="0">
-                                            <p style="font-size: 10px;">mins</p>
-                                            <p>:</p>
-                                            <input type="number" name="time_secs_{{loop.index}}" id="time_secs_{{loop.index}}" max="59" min="0" value="0">
-                                            <p style="font-size: 10px;">secs</p>
-                                            
-                                            <!-- Displays all time related errors -->
-                                            {% if errors.get("time_" ~ loop.index) %} 
-                                                {% for error in errors["time_" ~ loop.index] %}
-                                                    <div class="form-error">{{ error }}</div>
-                                                {% endfor %}
-                                            {% endif %}
+                                        <td>
+                                            {{ user["name"] or user["username"]}}
+
+                                            <!-- Displays the fields potential errors -->
+                                            {% if errors.get("account_id_" ~ loop.index) %} 
+                                                <div class="form-error">{{ errors["account_id_" ~ loop.index] }}</div>
+                                            {% endif %} 
                                         </td>
                                         
-                                        <input type="hidden" name="account_id_{{loop.index}}" value="{{user['id']}}">
+                                        <!-- Optional time input fields for mins and secs -->
+                                        <td>
+                                            <div style="display: flex; justify-content: center; align-items: end;">
+                                                <input type="number" name="time_mins_{{loop.index}}" 
+                                                id="time_mins_{{loop.index}}" max="100" min="0">
+                                                <p style="font-size: 10px;">mins</p>
+                                                <p>:</p>
+                                                <input type="number" name="time_secs_{{loop.index}}" id="time_secs_{{loop.index}}" max="59" min="0" value="0">
+                                                <p style="font-size: 10px;">secs</p>
+                                            </div>
+                                            
+                                        </td>
                                         
-                                        <!-- Displays the fields potential errors -->
-                                        {% if errors.get("account_id_" ~ loop.index) %} 
-                                            <div class="form-error">{{ errors["account_id_" ~ loop.index] }}</div>
+                                        {% if errors.has_time_errors %}
+                                            <td>
+                                                <!-- Displays all time related errors -->
+                                                {% if errors.get("time_" ~ loop.index) %} 
+                                                    {% for error in errors["time_" ~ loop.index] %}
+                                                        <div class="form-error">{{ error }}</div>
+                                                    {% endfor %}
+                                                {% endif %}
+                                            </td>
                                         {% endif %}
+                                        
+                                        <input type="hidden" name="account_id_{{loop.index}}" value="{{user['id']}}">
                                     </tr>
                                 {% endfor %}
                             </tbody>
