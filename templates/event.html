@@ -309,4 +309,38 @@
         // Runs on page load to update placings
         updatePlacings();
     </script>
+
+    <!-- Script will be used to show that time input is required if inputted elsewhere -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Gets all input fields for both mins and secs
+            const timeInputs = document.querySelectorAll("input[name^='time_mins_']", "input[name^='time_secs_']");
+
+            function validateTimeFields() {
+                let anyFilled = false;
+                
+                // Checks if any input has a non zero value, and if so sets any filled to true
+                timeInputs.forEach(input => {
+                    if (input.value && parseInt(input.value) !== 0) {
+                        anyFilled = true;
+                    }
+                });
+
+                // Applies red highlight if any are filled
+                timeInputs.forEach(input => {
+                    const isEmpty = !input.value || parseInt(input.value) === 0;
+
+                    if (anyFilled && isEmpty) {
+                        input.classList.add("invalid");
+                    } else {
+                        input.classList.remove("invalid");
+                    }
+                });
+            }
+
+            timeInputs.forEach(input => {
+                input.addEventListener("input", validateTimeFields);
+            });
+        });
+    </script>
 {% endblock %}

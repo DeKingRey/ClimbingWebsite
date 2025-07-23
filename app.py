@@ -360,6 +360,7 @@ def event(event_slug):
         # Gets the ID's that have joined the event to validate later
         valid_info = get_results(event_id)
         valid_ids = [str(p["id"]) for p in valid_info]
+        num_participants = len(valid_info)
 
         # If time is inputted once it must be inputted everywhere else
         time_required = False
@@ -368,29 +369,30 @@ def event(event_slug):
 
         i = 1
         # Loops through all result entries
-        while True:
+        for i in range(1, num_participants + 1):
             account_id = request.form.get(f"account_id_{i}")
-
             time_mins = request.form.get(f"time_mins_{i}")
             time_secs = request.form.get(f"time_secs_{i}")
 
+            time = None
+
             # Validates time inputs
-            if time_mins and time_secs:
-                time = f"{time_mins}:{time_secs}mins" # Still forms time if there are errors to prevent an unecessary none error display
+            if time_mins or time_secs:
+                time_required = True
+                if not time_mins or not time_secs:
+                    errors.setdefault(f"time_{i}", []).append("Both minutes and seconds are required")
                 # Ensures time inputs are a number
-                if not time_mins.isnumeric() or not time_secs.isnumeric():
-                    errors.setdefault(f"time_{i}", []).append("Time must be a numeric value") 
+                elif not time_mins.isnumeric() or not time_secs.isnumeric():
+                    errors.setdefault(f"time_{i}", []).append("Time must be numeric and non negative") 
                 else:
                     # Ensures time inputs aren't too long or negative
                     mins = int(time_mins)
                     secs = int(time_secs)
                     if not (0 <= mins <= 100) or not (0 <= secs <= 59):
                         errors.setdefault(f"time_{i}", []).append("Time must be a valid input")
-                    
-                    # Forms the time string if both inputs are gotten
-                    time = f"{time_mins}:{secs:02d}mins"
-            else:
-                time = None
+                    else:
+                        # Forms the time string if both inputs are gotten
+                        time = f"{time_mins}:{secs:02d}mins"
 
             # Breaks when it doesn't get an account id(no more participants)
             if not account_id:
@@ -416,8 +418,6 @@ def event(event_slug):
         # Will let the html know if there are any time errors
         if any(key.startswith("time_") for key in errors):
             errors["has_time_errors"] = True
-        
-        print(errors)
 
         # If there are no errors then the data will be inserted       
         if not errors:

@@ -212,7 +212,8 @@
 
             errorDiv.textContent = ""
             errorDiv.style.display = "none"; // Div becomes visible
-            nameInput.classList.remove("invalid");
+            locationInput.classList.remove("invalid");
+            return true;
         }
 
         function validateBriefDesc() {
@@ -254,7 +255,7 @@
             if (!value) { // If value field is empty
                 errorDiv.textContent = "Full description required"; // Checks if value is empty(false), if not error div is empty
                 errorDiv.style.display = "block"; // Div becomes visible
-                briefDesc.classList.add("invalid");
+                fullDesc.classList.add("invalid");
 
                 return false;
             }
@@ -321,6 +322,8 @@
                 validateBriefDesc() &&
                 validateFullDesc() &&
                 validateImage();
+            
+            console.log(valid);
 
             // If any come back false it will prevent submission
             if (!valid) {

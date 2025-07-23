@@ -10,7 +10,7 @@ BANNED_WORDS = [
     'damn',
     'ass',
     'rape',
-    'poop',
+    'poop', 
     'poo',
     'cock',
     'crap',
