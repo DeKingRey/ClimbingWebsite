@@ -64,7 +64,7 @@
                 </table>
             {% else %}
                 {% if user_id == event["host_id"] and participants %}
-                    <form action="{{ url_for('event', event_slug=event['slug'], id=event['id']) }}" method="POST" style="margin: 0 auto; width: 80%;">
+                    <form action="{{ url_for('event', event_slug=event['slug'], id=event['id']) }}" method="POST" style="margin: 0 auto; width: 80%;" id="add_results_form">
                         <table class="results-table" style="width: 100%;">
                             <!-- Header row, time only is displayed if it was given -->
                             <tr>
@@ -103,7 +103,6 @@
                                                 <input type="number" name="time_secs_{{loop.index}}" id="time_secs_{{loop.index}}" max="59" min="0" value="0">
                                                 <p style="font-size: 10px;">secs</p>
                                             </div>
-                                            
                                         </td>
                                         
                                         {% if errors.has_time_errors %}
@@ -124,7 +123,7 @@
                         </table>
                         <!-- Submit Button -->
                         <div class="form-group">
-                            <button type="submit" class="button submit-button">Submit</button>
+                            <button type="submit" class="button submit-button" id="submit-results">Submit</button>
                         </div>
                     </form> 
                 {% else %}
@@ -314,32 +313,46 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             // Gets all input fields for both mins and secs
-            const timeInputs = document.querySelectorAll("input[name^='time_mins_']", "input[name^='time_secs_']");
+            const timeInputs = document.querySelectorAll("input[name^='time_mins_'], input[name^='time_secs_']");
+            const form = document.getElementById("add_results_form");
 
             function validateTimeFields() {
                 let anyFilled = false;
+                let allFilled = true;
                 
                 // Checks if any input has a non zero value, and if so sets any filled to true
                 timeInputs.forEach(input => {
-                    if (input.value && parseInt(input.value) !== 0) {
+                    const val = parseInt(input.value);
+                    if (val > 0) {
                         anyFilled = true;
                     }
                 });
 
                 // Applies red highlight if any are filled
                 timeInputs.forEach(input => {
-                    const isEmpty = !input.value || parseInt(input.value) === 0;
+                    const val = parseInt(input.value);
+                    const isEmpty = !input.value; // Empty is true if no input or value is 0
 
                     if (anyFilled && isEmpty) {
                         input.classList.add("invalid");
+                        allFilled = false;
                     } else {
                         input.classList.remove("invalid");
                     }
                 });
+
+                return allFilled;
             }
 
             timeInputs.forEach(input => {
                 input.addEventListener("input", validateTimeFields);
+            });
+
+            form.addEventListener("submit", function(e) {
+                valid = validateTimeFields()
+                if (!valid) {
+                    e.preventDefault();
+                } 
             });
         });
     </script>

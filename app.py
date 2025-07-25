@@ -364,11 +364,9 @@ def event(event_slug):
 
         # If time is inputted once it must be inputted everywhere else
         time_required = False
-        if request.form.get("time_1"):
-            time_required = True
 
         i = 1
-        # Loops through all result entries
+        # Loops through all published result entries validating inputs then adding them
         for i in range(1, num_participants + 1):
             account_id = request.form.get(f"account_id_{i}")
             time_mins = request.form.get(f"time_mins_{i}")
@@ -394,27 +392,25 @@ def event(event_slug):
                         # Forms the time string if both inputs are gotten
                         time = f"{time_mins}:{secs:02d}mins"
 
-            # Breaks when it doesn't get an account id(no more participants)
-            if not account_id:
-                break
+            # Only validates results for a valid participant
+            if  account_id:    
+                # Prevents altering account_id value to an ID not in the event
+                if account_id not in valid_ids:
+                    errors[f"account_id_{i}"] = "Invalid participant ID"
+
+                # If time is inputted anywhere but not provided in one spot
+                if time_required and not time: 
+                    errors.setdefault(f"time_{i}", []).append("Time must be filled in if provided anywhere")
                 
-            # Prevents altering account_id value to an ID not in t  he event
-            if account_id not in valid_ids:
-                errors[f"account_id_{i}"] = "Invalid participant ID"
-            
-            # Handles time errors
-            if time:
-                time_required = True
-            if time_required and not time: # If time is inputted anywhere but not provided in one spot
-                errors.setdefault(f"time_{i}", []).append("Time must be filled in if provided anywhere")
-            
-            # Appends a dict of the results
-            submitted_results.append({
-                "account_id": int(account_id),
-                "placing": i,
-                "time": time if time_required else None
-            })
-            i += 1
+                # Appends a dict of the results
+                submitted_results.append({
+                    "account_id": int(account_id),
+                    "placing": i,
+                    "time": time if time_required else None
+                })
+            elif time_mins or time_secs:
+                errors[f"account_id_{i}"] = "Missing participant ID for entry"
+
         # Will let the html know if there are any time errors
         if any(key.startswith("time_") for key in errors):
             errors["has_time_errors"] = True
@@ -566,17 +562,31 @@ def get_events(pending):
 @app.route("/events/add-event", methods=["GET", "POST"])
 def add_event():
     locations = get_locations()
+    errors = {}
 
+    # Will validate and insert the event
     if request.method == "POST":
         con = sqlite3.connect("climbing.db")
         cur = con.cursor()
 
+        # Gets the fields and values from the form and turns them into a dict
         fields = ["name", "start_date", "end_date", "start_time", "end_time", "location", "description", "full_description", "post_date", "account_id"]
-        values = {field: request.form.get(field) for field in fields} # Converts values to a dictionary for easy accessing using the fields
+        values = {field: request.form.get(field) for field in fields}
+
+        # Validates name input
+        if values["name"]:
+            if values["name"] < 3 or values["name"] > 100:
+                errors["name"] = "Event title must be between 3 and 100 characters"
+        else:
+            errors["name"] = "Event title required"
+        
+        # Validates date and time inputs
+        if all(values.get(key) for key in ["start_date", "end_date", "start_time", "end_time"]):
+            
 
         # The following converts the dates into DD-MM-YYYY as is used in the SQL
-        start_date = datetime.strptime(values["start_date"], "%Y-%m-%d") # Converts the date to a datetime object, and is told the format
-        values["start_date"] = start_date.strftime("%d-%m-%Y") # Converts datetime to string giving the desired format
+        start_date = datetime.strptime(values["start_date"], "%Y-%m-%d")
+        values["start_date"] = start_date.strftime("%d-%m-%Y") 
 
         end_date = datetime.strptime(values["end_date"], "%Y-%m-%d")
         values["end_date"] = end_date.strftime("%d-%m-%Y")
@@ -588,8 +598,8 @@ def add_event():
         end_time = datetime.strptime(values["end_time"], "%H:%M")
         values["end_time"] = end_time.strftime("%I:%M%p").lower()
 
-        # Gets the locations id
-        values["location_id"] = values.pop("location") # Changes the location key name by popping it, which removes it but returns the value
+        # Gets the locations id and replaces the dict location value
+        values["location_id"] = values.pop("location")
         cur.execute("SELECT id FROM Location WHERE name = ?", (values["location_id"],))
         values["location_id"] = cur.fetchone()[0]
 
@@ -605,7 +615,7 @@ def add_event():
 
         return redirect(url_for("events"))
     else:
-        return render_template("add-event.html", header="Events", locations=locations)
+        return render_template("add-event.html", header="Events", locations=locations, errors=errors)
 
 
 def get_results(id):
