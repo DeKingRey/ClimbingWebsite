@@ -122,7 +122,7 @@
         });
     </script>
 
-     <script>
+     <script> // Script to validate entries
         const form = document.getElementById("add_event_form");
 
         // Gets all the input fields
@@ -137,26 +137,28 @@
         const imageInput = form.image;
 
         function validateName() {
-            const value = nameInput.value.trim(); // Gets name value
-            const errorDiv = document.querySelector(".name-errors"); // Gets the name errors div
+            const value = nameInput.value.trim(); 
+            const errorDiv = document.querySelector(".name-errors");
 
-            if (!value) { // If value field is empty
-                errorDiv.textContent = "Event title required"; // Checks if value is empty(false), if not error div is empty
-                errorDiv.style.display = "block"; // Div becomes visible
+            // If value field is empty display errors
+            if (!value) { 
+                errorDiv.textContent = "Event title required"; 
+                errorDiv.style.display = "block"; 
                 nameInput.classList.add("invalid");
 
                 return false;
             }
 
-            if (value.length < 3 || value.length > 100) { // The title must be between 3 and 20 characters
+            // The title must be between 3 and 100 characters
+            if (value.length < 3 || value.length > 100) { 
                 errorDiv.textContent = "Event title must be between 3 and 100 characters";
-                errorDiv.style.display = "block"; // Div becomes visible
+                errorDiv.style.display = "block"; 
                 nameInput.classList.add("invalid");
 
                 return false;
             }
             errorDiv.textContent = "";
-            errorDiv.style.display = "none"; // Div becomes visible
+            errorDiv.style.display = "none"; 
             nameInput.classList.remove("invalid");
             return true;
         }
@@ -199,19 +201,30 @@
         }
 
         function validateLocation() {
-            const value = locationInput.value.trim(); // Gets location value
-            const errorDiv = document.querySelector(".location-errors"); // Gets the location errors div
+            const value = locationInput.value.trim();
+            const errorDiv = document.querySelector(".location-errors");
 
-            if (!value) { // If value field is empty
-                errorDiv.textContent = "Location required"; // Checks if value is empty(false), if not error div is empty
-                errorDiv.style.display = "block"; // Div becomes visible
+            // If value field is empty display errors
+            if (!value) { 
+                errorDiv.textContent = "Location name required"; 
+                errorDiv.style.display = "block"; 
                 locationInput.classList.add("invalid");
 
                 return false;
             }
 
+            // The location name must be between 3 and 100 characters, otherwise display errors
+            if (value.length < 3 || value.length > 100) { 
+                errorDiv.textContent = "Location name must be between 3 and 100 characters";
+                errorDiv.style.display = "block"; 
+                nameInput.classList.add("invalid");
+
+                return false;
+            }
+            
+            // Don't display errors otherwise
             errorDiv.textContent = ""
-            errorDiv.style.display = "none"; // Div becomes visible
+            errorDiv.style.display = "none"; 
             locationInput.classList.remove("invalid");
             return true;
         }

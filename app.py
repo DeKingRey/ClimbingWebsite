@@ -434,10 +434,9 @@ def event(event_slug):
 
     # Gets all the events info
     cur.execute("""SELECT Event.id, Event.name, post_date, start_date, end_date, Event.description, Event.full_description,
-                Location.name AS location_name, Account.display_name AS name, start_time, end_time, Event.pending, Event.image, 
+                location, Account.display_name AS name, start_time, end_time, Event.pending, Event.image, 
                 Account.id AS host_id
                 FROM Event
-                JOIN Location ON Event.location_id = Location.id
                 JOIN Account ON Event.account_id = Account.id
                 WHERE Event.pending = 0 AND Event.id == ?;""", (event_id,))
     event_data = cur.fetchone()
@@ -526,9 +525,8 @@ def get_events(pending):
     cur = con.cursor()
     # Gets all events info
     cur.execute("""SELECT Event.id, Event.name, post_date, start_date, end_date, Event.description, 
-                Location.name AS location_name, Account.display_name, start_time, end_time, Event.pending, Event.image
+                location, Account.display_name, start_time, end_time, Event.pending, Event.image
                 FROM Event
-                JOIN Location ON Event.location_id = Location.id
                 JOIN Account ON Event.account_id = Account.id
                 WHERE Event.pending = ?;""", (pending,))
     events = cur.fetchall()
@@ -575,33 +573,66 @@ def add_event():
 
         # Validates name input
         if values["name"]:
-            if values["name"] < 3 or values["name"] > 100:
+            if len(values["name"]) < 3 or len(values["name"]) > 100:
                 errors["name"] = "Event title must be between 3 and 100 characters"
         else:
             errors["name"] = "Event title required"
         
         # Validates date and time inputs
         if all(values.get(key) for key in ["start_date", "end_date", "start_time", "end_time"]):
-            
+            # The following converts the dates into DD-MM-YYYY as is used in the SQL
+            try:
+                start_date = datetime.strptime(values["start_date"], "%Y-%m-%d")
+                values["start_date"] = start_date.strftime("%d-%m-%Y") 
 
-        # The following converts the dates into DD-MM-YYYY as is used in the SQL
-        start_date = datetime.strptime(values["start_date"], "%Y-%m-%d")
-        values["start_date"] = start_date.strftime("%d-%m-%Y") 
+                end_date = datetime.strptime(values["end_date"], "%Y-%m-%d")
+                values["end_date"] = end_date.strftime("%d-%m-%Y")
+                
+                # Converts the 24hr times to 12hr times to be used in the SQL
+                start_time = datetime.strptime(values["start_time"], "%H:%M")
+                values["start_time"] = start_time.strftime("%I:%M%p").lower()
 
-        end_date = datetime.strptime(values["end_date"], "%Y-%m-%d")
-        values["end_date"] = end_date.strftime("%d-%m-%Y")
+                end_time = datetime.strptime(values["end_time"], "%H:%M")
+                values["end_time"] = end_time.strftime("%I:%M%p").lower()
+
+                # Gets values which will be used to validate the inputted datetime
+                start_value = datetime.strptime(f"{values['start_date']} {values['start_time']}", "%Y-%m-%d %H:%M")
+                end_value = datetime.strptime(f"{values['end_date']} {values['end_time']}", "%Y-%m-%d %H:%M")
+                now = datetime.now()
+
+                # Makes sure datetimes are in the future and correctly ordered 
+                if start_value < now or end_value < now:
+                    errors["datetime"] = "Date and time must be in the future"
+                elif start_value > end_value:
+                    errors["datetime"] = "Start datetime must be before end datetime"
+            except ValueError:
+                # Ensures they are the write input type
+                errors["datetime"] = "Invalid date or time format"
+        else:
+            errors["datetime"] = "Dates and times are required"
+
+        # Validates location name input
+        if values["location"]:
+            if len(values["location"]) < 3 or len(values["location"]) > 100:
+                errors["location"] = "Location name must be between 3 and 100 characters"
+        else:
+            errors["location"] = "Location name required"
+
+        # Validates brief description input
+        if values["description"]:
+            if len(values["description"]) < 50 or len(values["description"]) > 250:
+                errors["description"] = "Brief description must be between 50 and 250 characters"
+        else:
+            errors["description"] = "Brief description required"
+
+        # Validates full description input
+        if values["full_description"]:
+            if len(values["full_description"]) < 100 or len(values["full_description"]) > 1000:
+                errors["full_description"] = "Full description must be between 100 and 1000 characters"
+        else:
+            errors["full_description"] = "Full description required"
+
         
-        # Converts the 24hr times to 12hr times to be used in the SQL
-        start_time = datetime.strptime(values["start_time"], "%H:%M")
-        values["start_time"] = start_time.strftime("%I:%M%p").lower()
-
-        end_time = datetime.strptime(values["end_time"], "%H:%M")
-        values["end_time"] = end_time.strftime("%I:%M%p").lower()
-
-        # Gets the locations id and replaces the dict location value
-        values["location_id"] = values.pop("location")
-        cur.execute("SELECT id FROM Location WHERE name = ?", (values["location_id"],))
-        values["location_id"] = cur.fetchone()[0]
 
         filename = photos.save(request.files["image"])
         file_url = url_for("get_file", filename=filename)

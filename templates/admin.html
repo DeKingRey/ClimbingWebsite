@@ -19,7 +19,7 @@
                         at <span style="font-weight: 600;">{{ event["start_time"] }} </span><br>
                         <i class="fa-solid fa-arrow-right"></i> <span style="font-weight: 600;">{{ event["end_date"] }}</span> 
                         at <span style="font-weight: 600;">{{ event["end_time"] }}</span></p>
-                    <p>Location: {{ event["location_name"] }}</p>
+                    <p>Location: {{ event["location"] }}</p>
                     <p>Brief Description: {{ event["description"] | replace('\n', '<br>') | safe }}</p>
                     <p>Full Description: {{ event["full_description"] | replace('\n', '<br>') | safe }}</p>
                     <p>Image:</p>

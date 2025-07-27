@@ -41,7 +41,7 @@
                             <div class="event-status" id="event-status-{{ event['id'] }}">Loading...</div>
                         </div>            
                         
-                        <p style="margin-top: 10px;"><strong>{{ event["location_name"] }}</strong></p>
+                        <p style="margin-top: 10px;"><strong>{{ event["location"] }}</strong></p>
                         <!-- Flask stores text area new lines as \n so we convert them to <br> and then they will display -->
                         <p class="description" >{{ event["description"] | replace('\n', '<br>') | safe }}</p> 
                         <div style="margin: 20px auto; font-weight: 600;">Created by {{ event["display_name"] }}</div>
