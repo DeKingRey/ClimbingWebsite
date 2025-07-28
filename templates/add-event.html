@@ -9,11 +9,12 @@
         <div class="form-group">
             <label for="name">Title</label>
             <input type="text" name="name" id="name" required>
-
-            <div class="form-error name-errors" style="display: none;">
-                {% if errors.get("name") %} 
-                    <p>{{ errors["name"] }}</p>
-                {% endif %} 
+            
+            <!-- Displays all errors, if any -->
+            <div class="form-error name-errors" style="display: none;"></div>
+            {% if errors.get("name") %} 
+                <div class="form-error">{{ errors["name"] }}</div>
+            {% endif %} 
             </div>
         </div>
 
@@ -26,11 +27,11 @@
                 <label for="end_date">End Date</label>
                 <input type="date" id="end_date" name="end_date" required>
 
-                <div class="form-error datetime-errors" style="display: none;">
-                    {% if errors.get("datetime") %} 
-                        <p>{{ errors["datetime"] }}</p>
-                    {% endif %} 
-                </div>
+                <!-- Displays all errors, if any -->
+                <div class="form-error datetime-errors" style="display: none;"></div>
+                {% if errors.get("datetime") %} 
+                    <div class="form-error">{{ errors["datetime"] }}</div>
+                {% endif %} 
             </div>
 
             <!-- Event times -->
@@ -52,12 +53,11 @@
                 <ul class="suggestions" id="locations"></ul> 
             </div> 
             
-            <!-- Will display location errors -->
-            <div class="form-error location-errors" style="display: none;">
-                {% if errors.get("location") %} 
-                    <p>{{ errors["location"] }}</p>
-                {% endif %} 
-            </div>
+            <!-- Displays all errors, if any -->
+            <div class="form-error location-errors" style="display: none;"></div>
+            {% if errors.get("location") %} 
+                <div class="form-error">{{ errors["location"] }}</div>
+            {% endif %} 
         </div>
 
         <!-- Brief description field -->
@@ -65,11 +65,11 @@
             <label for="description">Brief Description</label>
             <textarea name="description" id="description" rows="2" cols="10" required></textarea>
 
-            <div class="form-error desc-errors" style="display: none;">
-                {% if errors.get("description") %} 
-                    <p>{{ errors["description"] }}</p>
-                {% endif %} 
-            </div>
+            <!-- Displays all errors, if any -->
+            <div class="form-error desc-errors" style="display: none;"></div>
+            {% if errors.get("description") %} 
+                <div class="form-error">{{ errors["description"] }}</div>
+            {% endif %} 
         </div>
 
         <!-- Full description field -->
@@ -78,11 +78,11 @@
             <p style="font-size: 15px; margin-bottom: 3px;">Include the full information, rules, and any other info participants may require</p>
             <textarea name="full_description" id="full_description" rows="8" cols="10" required></textarea>
 
-            <div class="form-error full-desc-errors" style="display: none;">
-                {% if errors.get("full_description") %} 
-                    <p>{{ errors["full_description"] }}</p>
-                {% endif %} 
-            </div>
+            <!-- Displays all errors, if any -->
+            <div class="form-error full-desc-errors" style="display: none;"></div>
+            {% if errors.get("full_description") %} 
+                <div class="form-error">{{ errors["full_description"] }}</div>
+            {% endif %} 
         </div>
 
         <!-- Image field -->
@@ -92,11 +92,11 @@
 
             <img src="#" alt="Image Preview" id="photo-preview" class="photo-preview location-preview">
 
-            <div class="form-error image-errors" style="display: none;">
-                {% if errors.get("image") %} 
-                    <p>{{ errors["image"] }}</p>
-                {% endif %} 
-            </div>
+            <!-- Displays all errors, if any -->
+            <div class="form-error image-errors" style="display: none;"></div>
+            {% if errors.get("image") %} 
+                <div class="form-error">{{ errors["image"] }}</div>
+            {% endif %} 
         </div>
 
         <input type="hidden" name="account_id" id="account_id" value="{{ user_id }}"> <!-- Hidden value of the users id -->
@@ -156,7 +156,7 @@
         });
     </script>
 
-     <script> // Script to validate entries
+    <script> // Script to validate entries
         const form = document.getElementById("add_event_form");
 
         // Gets all the input fields
@@ -358,5 +358,23 @@
         fullDesc.addEventListener("input", validateFullDesc);
         imageInput.addEventListener("input", validateImage);
 
+
+        // Adds event listener to submit button
+        form.addEventListener("submit", function(e) {
+            // Checks validators
+            const valid = 
+                validateName() &&
+                validateDatetime() &&
+                validateLocation() &&
+                validateBriefDesc() &&
+                validateFullDesc() &&
+                validateImage();
+            
+
+            // If any come back false it will prevent submission
+            if (!valid) {
+                e.preventDefault();
+            }
+        });
     </script>
 {% endblock %}

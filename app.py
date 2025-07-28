@@ -635,11 +635,11 @@ def add_event():
             errors.setdefault("other", []).append("Post date required")
 
         # Validates that account id is the current users id
-        if values["account_id"] != session.get("user_id"):
+        if values["account_id"] != str(session.get("user_id")):
             errors.setdefault("other", []).append("Account ID is invalid")
 
         # Validates image input
-        image_file = photos.save(request.files["image"])
+        image_file = request.files.get("image")
         if not image_file or image_file.filename.strip() == "":
             errors["image"] = "Image required"
         else:
@@ -810,9 +810,45 @@ def process_submissions():
 def account():
     routes = None
     events = None
+    submissions = {}
     if session.get("user_id"): # Makes sure the user is logged in
         routes = get_logged_routes()
         events = get_joined_events()
+
+        con = sqlite3.connect("climbing.db")
+        con.row_factory = sqlite3.Row
+        cur = con.cursor()
+
+        user_id = session.get("user_id")
+        # Gets all routes/locations/events that are pending and made by the user, also adds a type column 
+        cur.execute("""
+                (
+                    SELECT 'Route' AS type, name, NULL, NULL
+                    FROM Route
+                    WHERE account_id = ? AND pending = 1
+                )
+                UNION ALL
+                (
+                    SELECT 'Location' AS type, name, NULL, NULL
+                    FROM Location
+                    WHERE account_id = ? AND pending = 1
+                )
+                UNION ALL
+                (
+                    SELECT 'Event' AS type, name, NULL, NULL
+                    FROM Event
+                    WHERE account_id = ? AND pending = 1
+                )""", (user_id, user_id, user_id))
+        results = cur.fetchall()
+        
+        submissions_results = [dict(row) for row in results]
+        submissions = {}
+        types = ["Route", "Location", "Event"]
+        i = 0
+        for result in submissions_results:
+            submissions.setdefault()
+            if result["type"] != types[i]:
+                i += 1
 
     if request.method == "POST":
         action = request.form.get("action") # Gets the action of the form
@@ -823,7 +859,7 @@ def account():
         if action == "logout":
             logout()
             return redirect(url_for("home")) # Logs out and goes to home if logout is pressed
-    return render_template("account.html", header="Account", routes=routes, events=events)
+    return render_template("account.html", header="Account", routes=routes, events=events, submissions=submissions)
 
 
 def get_logged_routes():
@@ -1004,6 +1040,7 @@ def login():
             correct_password = result[1]
             if check_password_hash(correct_password, password):
                 session["user_id"] = result[0]
+                print(type(result[0]))
                 return redirect(url_for("home"))
             else:
                 error = "Password is incorrect."
