@@ -13,11 +13,12 @@ load_dotenv()
 from flask import Flask, render_template, redirect, url_for, send_from_directory, request, session, jsonify, flash
 
 from flask_bcrypt import Bcrypt, check_password_hash
-from flask_uploads import UploadSet, IMAGES, configure_uploads
+from flask_uploads import UploadSet, IMAGES, configure_uploads, UploadNotAllowed
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms.validators import DataRequired, Length, EqualTo, Optional, NoneOf, ValidationError
 from wtforms import StringField, PasswordField, SubmitField
+from werkzeug.utils import secure_filename
 
 from slugify import slugify
 
@@ -27,14 +28,12 @@ from banned_words import BANNED_WORDS
 app = Flask(__name__)
 # This secret key is required for Flask-WTF to protect against CSRF attacks
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
-# This sets the destination for uploaded photos to the 'uploads' folder 
+# Sets the destination for uploaded photos to the 'uploads' folder and configures uploads
 app.config["UPLOADED_PHOTOS_DEST"] = "uploads"
-
-bcrypt = Bcrypt(app)
-
-# Sets image upload settings
 photos = UploadSet("photos", IMAGES)
 configure_uploads(app, photos)
+
+bcrypt = Bcrypt(app)
 
 
 def NoSpaces(message):
@@ -564,9 +563,6 @@ def add_event():
 
     # Will validate and insert the event
     if request.method == "POST":
-        con = sqlite3.connect("climbing.db")
-        cur = con.cursor()
-
         # Gets the fields and values from the form and turns them into a dict
         fields = ["name", "start_date", "end_date", "start_time", "end_time", "location", "description", "full_description", "post_date", "account_id"]
         values = {field: request.form.get(field) for field in fields}
@@ -580,21 +576,7 @@ def add_event():
         
         # Validates date and time inputs
         if all(values.get(key) for key in ["start_date", "end_date", "start_time", "end_time"]):
-            # The following converts the dates into DD-MM-YYYY as is used in the SQL
             try:
-                start_date = datetime.strptime(values["start_date"], "%Y-%m-%d")
-                values["start_date"] = start_date.strftime("%d-%m-%Y") 
-
-                end_date = datetime.strptime(values["end_date"], "%Y-%m-%d")
-                values["end_date"] = end_date.strftime("%d-%m-%Y")
-                
-                # Converts the 24hr times to 12hr times to be used in the SQL
-                start_time = datetime.strptime(values["start_time"], "%H:%M")
-                values["start_time"] = start_time.strftime("%I:%M%p").lower()
-
-                end_time = datetime.strptime(values["end_time"], "%H:%M")
-                values["end_time"] = end_time.strftime("%I:%M%p").lower()
-
                 # Gets values which will be used to validate the inputted datetime
                 start_value = datetime.strptime(f"{values['start_date']} {values['start_time']}", "%Y-%m-%d %H:%M")
                 end_value = datetime.strptime(f"{values['end_date']} {values['end_time']}", "%Y-%m-%d %H:%M")
@@ -605,6 +587,12 @@ def add_event():
                     errors["datetime"] = "Date and time must be in the future"
                 elif start_value > end_value:
                     errors["datetime"] = "Start datetime must be before end datetime"
+
+                # Converts date and times into a readable format
+                values["start_date"] = start_value.strftime("%d-%m-%Y") 
+                values["end_date"] = end_value.strftime("%d-%m-%Y")
+                values["start_time"] = start_value.strftime("%I:%M%p").lower()
+                values["end_time"] = end_value.strftime("%I:%M%p").lower()
             except ValueError:
                 # Ensures they are the write input type
                 errors["datetime"] = "Invalid date or time format"
@@ -631,22 +619,50 @@ def add_event():
                 errors["full_description"] = "Full description must be between 100 and 1000 characters"
         else:
             errors["full_description"] = "Full description required"
-
         
+        # Validates post date
+        if values["post_date"]:
+            try:
+                post_date = datetime.strptime(values["post_date"], "%d-%m-%Y")
+                today = datetime.today()
 
-        filename = photos.save(request.files["image"])
-        file_url = url_for("get_file", filename=filename)
+                # Makes sure it is the current date
+                if post_date.date() != today.date():
+                    errors.setdefault("other", []).append("Post date must be today")
+            except ValueError:
+                "Invalid post date format"
+        else:
+            errors.setdefault("other", []).append("Post date required")
 
-        cur.execute(f"""INSERT INTO Event ({' ,'.join(field for field in values)}, image, pending) 
-                    VALUES({', '.join('?' * len(fields))}, ?, 1)""",
-                    tuple(values[value] for value in values) + (file_url,))
+        # Validates that account id is the current users id
+        if values["account_id"] != session.get("user_id"):
+            errors.setdefault("other", []).append("Account ID is invalid")
 
-        con.commit()
-        con.close()
+        # Validates image input
+        image_file = photos.save(request.files["image"])
+        if not image_file or image_file.filename.strip() == "":
+            errors["image"] = "Image required"
+        else:
+            try:
+                # Secures the filename and attempts to save it
+                image_file.filename = secure_filename(image_file.filename)
+                saved_filename = photos.save(image_file)
 
-        return redirect(url_for("events"))
-    else:
-        return render_template("add-event.html", header="Events", locations=locations, errors=errors)
+                file_url = url_for("get_file", filename=saved_filename)
+            except UploadNotAllowed:
+                errors["image"] = "Invalid image file type"
+        
+        if errors == {}:
+            con = sqlite3.connect("climbing.db")
+            cur = con.cursor()
+            cur.execute(f"""INSERT INTO Event ({' ,'.join(field for field in values)}, image, pending) 
+                        VALUES({', '.join('?' * len(fields))}, ?, 1)""",
+                        tuple(values[value] for value in values) + (file_url,))
+
+            con.commit()
+            con.close()
+            return redirect(url_for("events"))
+    return render_template("add-event.html", header="Events", locations=locations, errors=errors)
 
 
 def get_results(id):

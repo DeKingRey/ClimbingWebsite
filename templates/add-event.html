@@ -10,7 +10,11 @@
             <label for="name">Title</label>
             <input type="text" name="name" id="name" required>
 
-            <div class="form-error name-errors" style="display: none;"></div>
+            <div class="form-error name-errors" style="display: none;">
+                {% if errors.get("name") %} 
+                    <p>{{ errors["name"] }}</p>
+                {% endif %} 
+            </div>
         </div>
 
         <!-- Date containers to align them -->
@@ -21,7 +25,12 @@
                 <input type="date" id="start_date" name="start_date" required>
                 <label for="end_date">End Date</label>
                 <input type="date" id="end_date" name="end_date" required>
-                <div class="form-error datetime-errors" style="display: none;"></div>
+
+                <div class="form-error datetime-errors" style="display: none;">
+                    {% if errors.get("datetime") %} 
+                        <p>{{ errors["datetime"] }}</p>
+                    {% endif %} 
+                </div>
             </div>
 
             <!-- Event times -->
@@ -36,13 +45,19 @@
 
         <!-- Event location field -->
         <div class="form-group">
+            <!-- Event search bar will show suggestions based on the input, custom input is allowed -->
             <div class="location-wrapper">
                 <label for="location">Location</label>
                 <input type="text" placeholder="Search..." name="location" id="location_input" autocomplete="off" required>
                 <ul class="suggestions" id="locations"></ul> 
-            </div> <!-- Creates the input field and search bar for locations, first having a text input field, and then using suggestions as a list which will display search suggestions. -->
-
-            <div class="form-error location-errors" style="display: none;"></div> <!-- Div which will display location errors -->
+            </div> 
+            
+            <!-- Will display location errors -->
+            <div class="form-error location-errors" style="display: none;">
+                {% if errors.get("location") %} 
+                    <p>{{ errors["location"] }}</p>
+                {% endif %} 
+            </div>
         </div>
 
         <!-- Brief description field -->
@@ -50,7 +65,11 @@
             <label for="description">Brief Description</label>
             <textarea name="description" id="description" rows="2" cols="10" required></textarea>
 
-            <div class="form-error desc-errors" style="display: none;"></div>
+            <div class="form-error desc-errors" style="display: none;">
+                {% if errors.get("description") %} 
+                    <p>{{ errors["description"] }}</p>
+                {% endif %} 
+            </div>
         </div>
 
         <!-- Full description field -->
@@ -59,7 +78,11 @@
             <p style="font-size: 15px; margin-bottom: 3px;">Include the full information, rules, and any other info participants may require</p>
             <textarea name="full_description" id="full_description" rows="8" cols="10" required></textarea>
 
-            <div class="form-error full-desc-errors" style="display: none;"></div>
+            <div class="form-error full-desc-errors" style="display: none;">
+                {% if errors.get("full_description") %} 
+                    <p>{{ errors["full_description"] }}</p>
+                {% endif %} 
+            </div>
         </div>
 
         <!-- Image field -->
@@ -69,11 +92,22 @@
 
             <img src="#" alt="Image Preview" id="photo-preview" class="photo-preview location-preview">
 
-            <div class="form-error image-errors" style="display: none;"></div>
+            <div class="form-error image-errors" style="display: none;">
+                {% if errors.get("image") %} 
+                    <p>{{ errors["image"] }}</p>
+                {% endif %} 
+            </div>
         </div>
 
         <input type="hidden" name="account_id" id="account_id" value="{{ user_id }}"> <!-- Hidden value of the users id -->
         <input type="hidden" name="post_date" id="post_date">
+
+        <!-- Displays hidden input errors -->
+        {% if errors["other"] %} 
+            {% for error in errors["other"] %}
+                <div class="form-error">{{ error }}</div>
+            {% endfor %}
+        {% endif %}
 
         <div class="form-group">
             <button type="submit" class="button submit-button">Submit</button>
@@ -109,16 +143,16 @@
     });
     </script>
 
-    <script> // Script for getting the date
-        document.addEventListener("DOMContentLoaded", function(){ // Executes code when the HTML has loaded
-            const date = new Date(); // New date based on local time from the users device
-            const year = date.getFullYear(); // Gets just the year
-            const month = String(date.getMonth() + 1).padStart(2, "0"); // Gets the month and its proper index, then in case its a 1 digit month it makes sure that there are 2 digits and it starts with 0(if needed)
+    <script> // Script for getting the current date
+        document.addEventListener("DOMContentLoaded", function(){
+            const date = new Date(); 
+            const year = date.getFullYear(); 
+            const month = String(date.getMonth() + 1).padStart(2, "0");
             const day = String(date.getDate()).padStart(2, "0");
             
-            const formattedDate = `${day}-${month}-${year}`; // Format of YYYY-MM-DD
-
-            document.getElementById("post_date").value = formattedDate; // Sets the local date value to the current date
+            // Puts date into the format DD-MM-YYYY then sets the field element to it
+            const formattedDate = `${day}-${month}-${year}`; 
+            document.getElementById("post_date").value = formattedDate; 
         });
     </script>
 
@@ -324,24 +358,5 @@
         fullDesc.addEventListener("input", validateFullDesc);
         imageInput.addEventListener("input", validateImage);
 
-
-        // Adds event listener to submit button
-        form.addEventListener("submit", function(e) {
-            // Checks validators
-            const valid = 
-                validateName() &&
-                validateDatetime() &&
-                validateLocation() &&
-                validateBriefDesc() &&
-                validateFullDesc() &&
-                validateImage();
-            
-            console.log(valid);
-
-            // If any come back false it will prevent submission
-            if (!valid) {
-                e.preventDefault();
-            }
-        });
     </script>
 {% endblock %}

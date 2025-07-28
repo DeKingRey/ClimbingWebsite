@@ -15,8 +15,9 @@
             <div class="form-group" style="width: 40%;">
                 <label for="username"><strong>Username</strong> - {{ username }}</label>
                 <input type="text" name="username" id="username" value="{{ username }}" minlength="3" maxlength="20"> 
-
-                {% if errors["username"] != [] %} <!-- Displays the fields potential errors -->
+                
+                <!-- Displays the fields potential errors -->
+                {% if errors["username"] != [] %} 
                     {% for error in errors["username"] %}
                         <div class="form-error">{{ error }}</div>
                     {% endfor %}
