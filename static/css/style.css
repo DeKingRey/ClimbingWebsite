@@ -68,13 +68,34 @@ p {
     margin: 0;
 }
 
+/* Divider class to create a divider between headings and content */
 .divider {
     height: 6px;
     width: 100px;
     background-color: var(--color-mustard);
     margin: 20px auto;
     border-radius: 5px;
-} /* Divider class to create a divider between headings and content */
+}
+
+/* Styles the notifications, and gives an animation */ 
+.popup-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #4CAF50;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 9999;
+    animation: fadeInOut 3s ease forwards;
+}
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(-10px); }
+    10% { opacity: 1; transform: translateY(0); }
+    90% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); }
+}
 
 footer {
     background-color: var(--color-sunshine);

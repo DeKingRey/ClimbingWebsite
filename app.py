@@ -287,6 +287,7 @@ def add_route():
 
     con.commit()
     con.close()
+    flash("Your route is now pending approval", "info")
 
     return redirect(current_url)
 
@@ -306,6 +307,7 @@ def add_location():
     
     con.commit()
     con.close()
+    flash("Your location is now pending approval", "info")
 
     return redirect(url_for("climbing_map"))
 
@@ -325,13 +327,9 @@ def log_route():
 
     con.commit()
     con.close()
+    flash("Route logged!", "info")
 
     return redirect(current_url)
-
-
-@app.route("/posts", methods=["GET", "POST"])
-def posts():
-    return render_template("posts.html", header="Posts")
 
 
 @app.route("/events", methods=["GET", "POST"])
@@ -429,6 +427,7 @@ def event(event_slug):
                                 (result["placing"], result["account_id"], event_id))
             con.commit()
             con.close()
+            flash("Results added!", "info")
             return redirect(url_for("event", event_slug=event_slug, id=event_id))
 
     # Gets all the events info
@@ -661,6 +660,8 @@ def add_event():
 
             con.commit()
             con.close()
+
+            flash("Your event is now pending approval", "info")
             return redirect(url_for("events"))
     return render_template("add-event.html", header="Events", locations=locations, errors=errors)
 
@@ -755,9 +756,9 @@ def admin():
     cur = con.cursor()
 
     cur.execute("""SELECT Route.id, Route.name, Location.name, GROUP_CONCAT(Type.name, ', '), Route.grade, Route.bolts FROM Route 
-                JOIN Location ON Route.location_id = Location.id
-                JOIN Route_Type ON Route.id = Route_Type.route_id
-                JOIN Type ON Type.id = Route_Type.type_id
+                LEFT JOIN Location ON Route.location_id = Location.id
+                LEFT JOIN Route_Type ON Route.id = Route_Type.route_id
+                LEFT JOIN Type ON Type.id = Route_Type.type_id
                 WHERE Route.pending = 1
                 GROUP BY Route.id;""")
     
@@ -822,31 +823,25 @@ def account():
         user_id = session.get("user_id")
         # Gets all routes/locations/events that are pending and made by the user, also adds a type column 
         cur.execute("""
-                (
-                    SELECT 'Route' AS type, name, NULL, NULL
-                    FROM Route
-                    WHERE account_id = ? AND pending = 1
-                )
+                SELECT 'Route' AS type, name, NULL, NULL
+                FROM Route
+                WHERE account_id = ? AND pending = 1
                 UNION ALL
-                (
-                    SELECT 'Location' AS type, name, NULL, NULL
-                    FROM Location
-                    WHERE account_id = ? AND pending = 1
-                )
+                SELECT 'Location' AS type, name, NULL, NULL
+                FROM Location
+                WHERE account_id = ? AND pending = 1
                 UNION ALL
-                (
-                    SELECT 'Event' AS type, name, NULL, NULL
-                    FROM Event
-                    WHERE account_id = ? AND pending = 1
-                )""", (user_id, user_id, user_id))
+                SELECT 'Event' AS type, name, NULL, NULL
+                FROM Event
+                WHERE account_id = ? AND pending = 1
+            """, (user_id, user_id, user_id))
         results = cur.fetchall()
         
         submissions_results = [dict(row) for row in results]
-        submissions = {}
         types = ["Route", "Location", "Event"]
         i = 0
         for result in submissions_results:
-            submissions.setdefault()
+            submissions.setdefault(types[i], []).append(result)
             if result["type"] != types[i]:
                 i += 1
 

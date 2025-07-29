@@ -22,14 +22,41 @@
             <!-- The different account infos to display, a row of buttons that call a js function to show their section -->
             <div class="button-row">
                 <button class="button selected" type="button" onclick="showSection('submissions', this)">Pending Submissions</button>
-                <button class="button selected" type="button" onclick="showSection('climbs', this)">Logged Climbs</button>
+                <button class="button" type="button" onclick="showSection('climbs', this)">Logged Climbs</button>
                 <button class="button" type="button" onclick="showSection('events', this)">Joined Events</button>
             </div>
 
             <!-- Section that displays users pending submissions-->
             <div class="account-section pending-submissions-container" id="submissions">
                 {% if submissions %}
-                    <p>Submissions</p>
+                    <table>
+                        <tr>
+                            <th>Type</th>
+                            <th>Name</th> 
+                        </tr>
+                        
+                        {% for route in submissions["Route"] %}
+                            <tr>
+                                <td>{{ route["type"] }}</td>
+                                <td>{{ route["name"] }}</td>
+                            </tr>
+                        {% endfor %}
+
+                        {% for loc in submissions["Location"] %}
+                            <tr>
+                                <td>{{ loc["type"] }}</td>
+                                <td>{{ loc["name"] }}</td>
+                            </tr>
+                        {% endfor %}
+
+                        {% for event in submissions["Event"] %}
+                            <tr>
+                                <td>{{ event["type"] }}</td>
+                                <td>{{ event["name"] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                    
                 {% else %}
                     <p style="margin: auto;">You have no pending submissions</p>
                 {% endif %}

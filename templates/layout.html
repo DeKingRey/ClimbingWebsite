@@ -9,23 +9,27 @@
 </head>
 <body>
     <header>{{ header }}</header>
+
+    <!-- Sets up the navbar for every page, and adds the register and login elements to the navbar if the user is not logged in -->
     <nav class="navbar">
         <ul>
             <li><a href="/">Home</a></li>
             <li><a href="/map">Map</a></li>
             <li><a href="/events">Events</a></li>
-            <li><a href="/posts">Posts</a></li>
             {% if not username %}
                 <li><a href="/register">Register</a></li>
                 <li><a href="/login">Login</a></li>
-            {% endif %} <!-- Sets up the navbar for every page, and adds the register and login elements to the navbar if the user is not logged in -->
+            {% endif %}
+
+            <!-- Admin page will be displayed if the user is an admin -->
             {% if permission_level %}
                 {% if permission_level >= 2 %}
                     <li><a href="/admin">Admin</a></li>
-                {% endif %} <!-- Admin page will be displayed if the user is an admin -->
+                {% endif %} 
             {% endif %}
         </ul>
 
+        <!-- Displays profile picture as a link to account, uses placeholder if not logged in -->
         <a href="/account" class="profile-link">
             <div class="profile">
                 {% if profile_picture %}
@@ -33,10 +37,44 @@
                 {% else %}
                     <div class="profile-placeholder">?</div>
                 {% endif %}
-            </div>  <!-- Displays the profile picture and links to the account page, though sets the image to a placeholder if it is not given. This is a part of the navbar. -->
+            </div>
         </a>
     </nav>
     <main>{% block content %}{% endblock %}</main>
+
+    <!-- Shows any notifications(flashed messages) when loaded -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <script>
+                window.addEventListener("DOMContentLoaded", () => {
+                    {% for category, message in messages %}
+                        showNotification("{{ message }}", "{{ category }}");
+                    {% endfor %}
+                })
+            </script>
+        {% endif %}
+    {% endwith %}
+    
+    <script> // Handles showing notifications
+        function showNotification(message, category) {
+            // Creates notification popup
+            const notification = document.createElement("div");
+            notification.className = "popup-notification";
+            
+            if (category === "info") {
+                notification.style.backgroundColor = "#3498db";
+            }
+
+            notification.innerText = message;
+            document.body.appendChild(notification);
+
+            // Removes after an interval
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    </script>
+
     <footer>&copy;Miguel Monreal 2025</footer> <!-- Sets my footer. -->
 </body>
 </html>
