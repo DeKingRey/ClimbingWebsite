@@ -319,15 +319,26 @@ def log_route():
     route_id = request.form.get("route_id")
     rating = request.form.get("rating")
     date = request.form.get("local_date")
+    errors = {}
+
+    
 
     con = sqlite3.connect("climbing.db")
     cur = con.cursor()
+    
+    cur.execute("SELECT 1 FROM Account_Route WHERE account_id = ? AND route_id = ?;", (user_id, route_id,))
+    existing_entry = cur.fetchone()
 
-    cur.execute("INSERT INTO Account_Route (account_id, route_id, rating, date) VALUES (?, ?, ?, ?)", (user_id, route_id, rating, date,))
+    # Checks if the user has already logged, if so update info, if not insert it
+    if existing_entry:
+        cur.execute("UPDATE Account_Route SET rating = ?, date = ? WHERE account_id = ? AND route_id = ?;", 
+                    (rating, date, user_id, route_id,))
+    else:
+        cur.execute("INSERT INTO Account_Route (account_id, route_id, rating, date) VALUES (?, ?, ?, ?)", (user_id, route_id, rating, date,))
 
     con.commit()
     con.close()
-    flash("Route logged!", "info")
+    flash("Route logged!", "success")
 
     return redirect(current_url)
 
@@ -427,7 +438,7 @@ def event(event_slug):
                                 (result["placing"], result["account_id"], event_id))
             con.commit()
             con.close()
-            flash("Results added!", "info")
+            flash("Results added!", "success")
             return redirect(url_for("event", event_slug=event_slug, id=event_id))
 
     # Gets all the events info
