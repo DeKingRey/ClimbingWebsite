@@ -3,7 +3,6 @@ A climbing flask website to aid climbers to find climbs and communicate
 By Miguel Monreal on 27/03/25"""
 
 import sqlite3
-import requests
 import os 
 from dotenv import load_dotenv
 from datetime import datetime 
@@ -18,7 +17,6 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms.validators import DataRequired, Length, EqualTo, Optional, NoneOf, ValidationError
 from wtforms import StringField, PasswordField, SubmitField
-from werkzeug.utils import secure_filename
 
 from slugify import slugify
 
@@ -27,7 +25,8 @@ from banned_words import BANNED_WORDS
 
 app = Flask(__name__)
 # This secret key is required for Flask-WTF to protect against CSRF attacks
-app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+# app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+app.config["SECRET_KEY"] = "T8OR437B9&i#e^*&b)p(*:o#iuef(*yoliu))"
 # Sets the destination for uploaded photos to the 'uploads' folder and configures uploads
 app.config["UPLOADED_PHOTOS_DEST"] = "uploads"
 photos = UploadSet("photos", IMAGES)
@@ -320,12 +319,40 @@ def log_route():
     rating = request.form.get("rating")
     date = request.form.get("local_date")
     errors = {}
-
     
-
     con = sqlite3.connect("climbing.db")
     cur = con.cursor()
+
+    # Gets all routes ids 
+    cur.execute("SELECT id FROM Route")
+    results = cur.fetchall()
+    route_ids = [str(id[0]) for id in results]
+
+    # Validates that the route id exists
+    if route_id not in route_ids:
+        errors.setdefault("other", []).append("Route id does not exist")
+
+    # Validates that the rating is between 1-5 and is an int
+    try:
+        if int(rating) < 1 or int(rating) > 5:
+            errors["rating"] = "Rating must be between 1 and 5"
+    except ValueError:
+        errors["rating"] = "Rating must be a number"
     
+    # Validates post date
+    if values["post_date"]:
+        try:
+            post_date = datetime.strptime(values["post_date"], "%d-%m-%Y")
+            today = datetime.today()
+
+            # Makes sure it is the current date
+            if post_date.date() != today.date():
+                errors.setdefault("other", []).append("Post date must be today")
+        except ValueError:
+            "Invalid post date format"
+    else:
+        errors.setdefault("other", []).append("Post date required")
+
     cur.execute("SELECT 1 FROM Account_Route WHERE account_id = ? AND route_id = ?;", (user_id, route_id,))
     existing_entry = cur.fetchone()
 
@@ -654,8 +681,7 @@ def add_event():
             errors["image"] = "Image required"
         else:
             try:
-                # Secures the filename and attempts to save it
-                image_file.filename = secure_filename(image_file.filename)
+                # Attempts to save the filename
                 saved_filename = photos.save(image_file)
 
                 file_url = url_for("get_file", filename=saved_filename)
