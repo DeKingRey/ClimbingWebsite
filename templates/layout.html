@@ -45,13 +45,17 @@
     <!-- Shows any notifications(flashed messages) when loaded -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <script>
-                window.addEventListener("DOMContentLoaded", () => {
-                    {% for category, message in messages %}
-                        showNotification("{{ message }}", "{{ category }}");
-                    {% endfor %}
-                })
-            </script>
+            {% for category, message in messages %}
+                {% if category == "log_errors" %}
+                    {% set log_errors = message %}
+                {% else %}
+                    <script>
+                        window.addEventListener("DOMContentLoaded", () => {
+                            showNotification("{{ message }}", "{{ category }}");
+                        });
+                    </script>
+                {% endif %}
+            {% endfor %}
         {% endif %}
     {% endwith %}
     
@@ -66,6 +70,9 @@
             }
             else if (category == "success") {
                 notification.style.backgroundColor  ="#4CAF50";
+            }
+            else if (category == "error") {
+                notification.style.backgroundColor = "#F87171"
             }
 
             notification.innerText = message;

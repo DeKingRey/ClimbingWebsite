@@ -339,33 +339,37 @@ def log_route():
     except ValueError:
         errors["rating"] = "Rating must be a number"
     
-    # Validates post date
-    if values["post_date"]:
+    # Validates log date
+    if date:
         try:
-            post_date = datetime.strptime(values["post_date"], "%d-%m-%Y")
+            post_date = datetime.strptime(date, "%d-%m-%Y")
             today = datetime.today()
 
             # Makes sure it is the current date
             if post_date.date() != today.date():
-                errors.setdefault("other", []).append("Post date must be today")
+                errors.setdefault("other", []).append("Log date must be today")
         except ValueError:
             "Invalid post date format"
     else:
-        errors.setdefault("other", []).append("Post date required")
+        errors.setdefault("other", []).append("Log date required")
 
-    cur.execute("SELECT 1 FROM Account_Route WHERE account_id = ? AND route_id = ?;", (user_id, route_id,))
-    existing_entry = cur.fetchone()
+    if not errors:
+        cur.execute("SELECT 1 FROM Account_Route WHERE account_id = ? AND route_id = ?;", (user_id, route_id,))
+        existing_entry = cur.fetchone()
 
-    # Checks if the user has already logged, if so update info, if not insert it
-    if existing_entry:
-        cur.execute("UPDATE Account_Route SET rating = ?, date = ? WHERE account_id = ? AND route_id = ?;", 
-                    (rating, date, user_id, route_id,))
+        # Checks if the user has already logged, if so update info, if not insert it
+        if existing_entry:
+            cur.execute("UPDATE Account_Route SET rating = ?, date = ? WHERE account_id = ? AND route_id = ?;", 
+                        (rating, date, user_id, route_id,))
+        else:
+            cur.execute("INSERT INTO Account_Route (account_id, route_id, rating, date) VALUES (?, ?, ?, ?)", (user_id, route_id, rating, date,))
+
+        con.commit()
+        con.close()
+        flash("Route logged!", "success")
     else:
-        cur.execute("INSERT INTO Account_Route (account_id, route_id, rating, date) VALUES (?, ?, ?, ?)", (user_id, route_id, rating, date,))
-
-    con.commit()
-    con.close()
-    flash("Route logged!", "success")
+        flash(errors, "log_errors")
+        flash("Invalid Form Submission", "error")
 
     return redirect(current_url)
 
