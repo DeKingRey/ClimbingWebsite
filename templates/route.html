@@ -38,6 +38,11 @@
                 <div style="display: flex; justify-content: center;">
                     <button type="submit" class="button" style="width: 50%;">Log</button>
                 </div>
+
+                {% if log_errors %}
+                    <p>{{ log_errors["rating"]}} <br> {{ log_errors["other"][0] }}</p>
+                    <p>errors</p>
+                {% endif %}
             </form>
         </div> 
     </div><br><br>

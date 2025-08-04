@@ -110,7 +110,12 @@ def home():
         date = None
 
     return render_template("home.html", header="Home")
-    
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template("404.html", header="Page not Found"), 404
+
 
 @app.route("/map")
 def climbing_map():
@@ -258,18 +263,19 @@ def map_route(location, name):
 @app.route("/map/add-route", methods=["GET", "POST"])
 def add_route():
     location_name = request.form.get("location")
+    has_errors = False
     
     current_url = request.form.get("url")
     con = sqlite3.connect("climbing.db")
     cur = con.cursor()
 
+    # Sets all the field names for inserting and sets values
+    fields = ["name", "grade", "bolts"]
+    values = [request.form.get(field) for field in fields]
+
+
     cur.execute("SELECT id FROM Location WHERE name = ?", (location_name,))
     location_id = cur.fetchone()[0]
-
-    # Sets all the field names for inserting
-    fields = ["name", "grade", "bolts"]
-    # Gets all the field values from the form, by looping through the fields list
-    values = [request.form.get(field) for field in fields]
 
     types = request.form.getlist("types[]")
 
@@ -368,7 +374,6 @@ def log_route():
         con.close()
         flash("Route logged!", "success")
     else:
-        flash(errors, "log_errors")
         flash("Invalid Form Submission", "error")
 
     return redirect(current_url)

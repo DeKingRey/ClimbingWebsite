@@ -46,15 +46,11 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                {% if category == "log_errors" %}
-                    {% set log_errors = message %}
-                {% else %}
-                    <script>
-                        window.addEventListener("DOMContentLoaded", () => {
-                            showNotification("{{ message }}", "{{ category }}");
-                        });
-                    </script>
-                {% endif %}
+                <script>
+                    window.addEventListener("DOMContentLoaded", () => {
+                        showNotification("{{ message }}", "{{ category }}");
+                    });
+                </script>
             {% endfor %}
         {% endif %}
     {% endwith %}
