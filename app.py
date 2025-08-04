@@ -262,9 +262,10 @@ def map_route(location, name):
 
 @app.route("/map/add-route", methods=["GET", "POST"])
 def add_route():
-    location_name = request.form.get("location")
+    location_name = request.form.get("location").strip()
+    types = request.form.getlist("types[]")
     has_errors = False
-    
+
     current_url = request.form.get("url")
     con = sqlite3.connect("climbing.db")
     cur = con.cursor()
@@ -272,28 +273,74 @@ def add_route():
     # Sets all the field names for inserting and sets values
     fields = ["name", "grade", "bolts"]
     values = [request.form.get(field) for field in fields]
+    values[0] = values[0].strip()
 
+    # Validates name field, making sure its not null or too big
+    if len(values[0]) <= 0 or len(values[0]) > 100:
+        has_errors = True
+    else:
+        # Ensures it is an original route name
+        cur.execute("SELECT name FROM Route;")
+        route_names = [row[0] for row in cur.fetchall()]
+        if values[0] in route_names:
+            has_errors = True
+    
+    # Validates grade field, making sure its not null or too big
+    if len(values[1]) <= 0 or len(values[1]) > 10:
+        has_errors = True
 
-    cur.execute("SELECT id FROM Location WHERE name = ?", (location_name,))
-    location_id = cur.fetchone()[0]
+    # Validates bolts field, allowing it to be optional but a proper number and not too big
+    if values[2] != "":
+        if not values[2].isdigit():
+            has_errors = True
+        else:
+            bolts = int(values[2])
+            if bolts < 0 or bolts > 1000:
+                has_errors = True
+    
+    # Validates location name field, ensuring its not null and is pre-existing
+    if not location_name:
+        has_errors = True
+    else:
+        cur.execute("SELECT name FROM Location;")
+        location_names = [row[0] for row in cur.fetchall()]
+        if location_name not in location_names:
+            has_errors = True
 
-    types = request.form.getlist("types[]")
+    # Validates types field, ensuring its not null and that the types exist 
+    if types == []:
+        has_errors = True
+    else:
+        cur.execute("SELECT id FROM Type;")
+        type_ids = [row[0] for row in cur.fetchall()]
+        for type_id in types:
+            if not type_id.isdigit():
+                has_errors = True
+                break
+            if int(type_id) not in type_ids:
+                has_errors = True
 
-    # Will insert the values into the database using the given field names and values
-    cur.execute(f"INSERT INTO Route ({', '.join(fields)}, location_id, pending) VALUES({', '.join('?' * len(fields))}, ?, 1)", values + [location_id])
-    con.commit()
+    # Inserts if no errors
+    if not has_errors:
+        cur.execute("SELECT id FROM Location WHERE name = ?", (location_name,))
+        location_id = cur.fetchone()[0]
 
-    # Gets the new routes id
-    cur.execute("SELECT id FROM Route WHERE name = ?", (values[0],))
-    route_id = cur.fetchone()[0]
+        # Will insert the values into the database using the given field names and values
+        cur.execute(f"INSERT INTO Route ({', '.join(fields)}, location_id, pending) VALUES({', '.join('?' * len(fields))}, ?, 1)", values + [location_id])
+        con.commit()
 
-    for type in types:
-        cur.execute("INSERT INTO Route_Type (route_id, type_id) VALUES(?, ?)", (route_id, int(type)))
+        # Gets the new routes id
+        cur.execute("SELECT id FROM Route WHERE name = ?", (values[0],))
+        route_id = cur.fetchone()[0]
 
-    con.commit()
-    con.close()
-    flash("Your route is now pending approval", "info")
+        for type in types:
+            cur.execute("INSERT INTO Route_Type (route_id, type_id) VALUES(?, ?)", (route_id, int(type)))
 
+        con.commit()
+        con.close()
+        flash("Your route is now pending approval", "info")
+    else:
+        flash("Invalid Form Submission", "error")
     return redirect(current_url)
 
 
