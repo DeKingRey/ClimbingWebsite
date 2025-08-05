@@ -348,13 +348,40 @@ def add_route():
 def add_location():
     con = sqlite3.connect("climbing.db")
     cur = con.cursor()
+    has_errors = False
 
-    name = request.form.get("name")
-    coordinates = f"{request.form.get('lat')} {request.form.get('lon')}"
+    name = request.form.get("name").strip()
+    lat = request.form.get("lat")
+    lon = request.form.get("lon")
     setting_id = request.form.get("setting")
     filename = photos.save(request.files["image"])
     file_url = url_for("get_file", filename=filename)
 
+    # Validates name field, making sure its not null or too big
+    if len(name) <= 0 or len(name) > 100:
+        has_errors = True
+
+    # Validates lat and lon, ensuring they are the correct type
+    try:
+        latF = float(lat)
+        lonF = float(lon)
+        # Validates that they are a valid coordinate
+        if not (-90 <= latF <= 90 and -180 <= lonF <= 180):
+            has_errors = True
+    except (ValueError, TypeError):
+        has_errors = True
+    
+    # Validates that the setting id is a digit
+    if setting_id.isdigit():
+        cur.execute("SELECT id FROM Setting;")
+        setting_ids = [row[0] for row in cur.fetchall()]
+        # Validates that the setting id is a valid id
+        if int(setting_id) not in setting_ids:
+            has_errors = True
+        
+    
+
+    coordinates = f"{request.form.get('lat')} {request.form.get('lon')}"
     cur.execute("INSERT INTO Location (name, coordinates, setting_id, image, pending) VALUES(?, ?, ?, ?, 1)", (name, coordinates, setting_id, file_url,))
     
     con.commit()

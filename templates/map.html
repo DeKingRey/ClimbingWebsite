@@ -70,27 +70,34 @@
         <div class="popup-inner">
             <button data-popup-close class="close-button">&times;</button>
             <h2>Add Location</h2>
-            <form action="{{ url_for('add_location') }}" method="POST" enctype="multipart/form-data">
-
+            <form action="{{ url_for('add_location') }}" method="POST" enctype="multipart/form-data" id="add_loc_form">
+                <!-- Name input field -->
                 <div class="form-group">
                     <label for="name">Name</label>
                     <input type="text" name="name" id="name" required>
-                </div>
 
+                    <div class="form-error loc-name-errors" style="display: none;"></div> <!-- Div which will display loc name errors -->
+                </div>
+                
+                <!-- Setting input field -->
                 <div class="form-group">
                     <label for="setting">Setting</label>
+                    <!-- Loops through the settings and creates options for them--> 
                     <select name="setting" id="setting">
                         {% for setting in settings %}
                             <option value="{{setting[0]}}" required>{{setting[1]}}</option >
                         {% endfor %}
-                    </select> <!-- Loops through the settings and creates options for them--> 
+                    </select> 
                 </div>
 
+                <!-- Image input field -->
                 <div class="form-group">
                     <label for="image" class="button">Add Image</label>
-                    <input type="file" id="image" name="image" accept="image/*" style="display: none;" required> <!-- Adds an image input field where the user has to add in an image-->
+                    <input type="file" id="image" name="image" accept="image/*" style="display: none;">
 
                     <img src="#" alt="Image Preview" id="photo-preview" class="photo-preview location-preview">
+
+                    <div class="form-error loc-image-errors" style="display: none;"></div> <!-- Div which will display image errors -->
                 </div>
 
                 <input type="hidden" name="lat" id="lat">
@@ -109,6 +116,78 @@
     </script>
     <script src="/static/js/preview.js"></script>
     <script src="/static/js/add_route_errors.js"></script>
+    <script>
+        const locForm = document.getElementById("add_loc_form");
+
+        // Gets all the input fields
+        const locNameInput = locForm.elements.namedItem("name").trim();
+        const locImageInput = locForm.image;
+
+        function validateName() {
+            const value = locNameInput.value.trim(); 
+            const errorDiv = document.querySelector(".loc-name-errors");
+
+            // Validates whether input field is empty
+            if (!value) { 
+                errorDiv.textContent = "Location name required";
+                errorDiv.style.display = "block"; 
+                locNameInput.classList.add("invalid");
+
+                return false;
+            }
+            // Validates that the length of the name isn't too long
+            else if (value.length > 100) {
+                errorDiv.textContent = "Location name must be less than 100 characters";
+                errorDiv.style.display = "block"; 
+                locNameInput.classList.add("invalid");
+
+                return false;
+            }
+
+            errorDiv.textContent = "";
+            errorDiv.style.display = "none";
+            locNameInput.classList.toggle("invalid", false);
+            return true;
+        }
+
+        function validateImage() {
+            const value = locImageInput.value.trim(); 
+            const errorDiv = document.querySelector(".loc-image-errors"); 
+            
+            // Validates that the image is not null
+            if (!value) { 
+                errorDiv.textContent = "Image required"; 
+                errorDiv.style.display = "block"; 
+                locImageInput.classList.add("invalid");
+
+                return false;
+            }
+
+            errorDiv.textContent = "";
+            errorDiv.style.display = "none";
+            locImageInput.classList.remove("invalid");
+            return true;
+        }
+
+        // Adds event listeners to all input fields, waiting for input
+        locNameInput.addEventListener("input", validateName);
+        locImageInput.addEventListener("input", validateImage);
+
+
+        // Adds event listener to submit button
+        locForm.addEventListener("submit", function(e) {
+            // Checks validators
+            const valid = 
+                validateName() &&
+                validateImage();
+
+            // If any come back false it will prevent submission, and reopen location popup
+            if (!valid) {
+                e.preventDefault();
+                document.getElementById("loc-popup").classList.add("open");
+            }
+        });
+    </script>
 
     <script> // Script for location search bar
         const locs = {{ locations|tojson }} // Gets location info

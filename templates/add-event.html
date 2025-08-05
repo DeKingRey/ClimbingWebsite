@@ -264,83 +264,86 @@
         }
 
         function validateBriefDesc() {
-            const value = briefDesc.value.trim(); // Gets brief desc value
-            const errorDiv = document.querySelector(".desc-errors"); // Gets the brief desc errors div
+            const value = briefDesc.value.trim();
+            const errorDiv = document.querySelector(".desc-errors");
 
-            if (!value) { // If value field is empty
-                errorDiv.textContent = "Brief description required"; // Checks if value is empty(false), if not error div is empty
-                errorDiv.style.display = "block"; // Div becomes visible
+            // Validates that brief desc is not null
+            if (!value) { 
+                errorDiv.textContent = "Brief description required";
+                errorDiv.style.display = "block"; 
                 briefDesc.classList.add("invalid");
 
                 return false;
             }
 
             // Adds errors depending on whether the description is too long or too short
-            if (value.length < 50) { // The description must be between 10 and 300 characters
+            if (value.length < 50) {
                 errorDiv.textContent = "Description is too short";
-                errorDiv.style.display = "block"; // Div becomes visible
+                errorDiv.style.display = "block"; 
                 briefDesc.classList.add("invalid");
 
                 return false;
             } else if (value.length > 250) {
                 errorDiv.textContent = "Description is too long";
-                errorDiv.style.display = "block"; // Div becomes visible
+                errorDiv.style.display = "block"; 
                 briefDesc.classList.add("invalid");
 
                 return false;
             }
             errorDiv.textContent = "";
-            errorDiv.style.display = "none"; // Div becomes visible
+            errorDiv.style.display = "none"; 
             briefDesc.classList.remove("invalid");
             return true;
         }
 
         function validateFullDesc() {
-            const value = fullDesc.value.trim(); // Gets full desc value
-            const errorDiv = document.querySelector(".full-desc-errors"); // Gets the full desc errors div
+            const value = fullDesc.value.trim(); 
+            const errorDiv = document.querySelector(".full-desc-errors"); 
 
-            if (!value) { // If value field is empty
-                errorDiv.textContent = "Full description required"; // Checks if value is empty(false), if not error div is empty
-                errorDiv.style.display = "block"; // Div becomes visible
+            // Validates that full desc is not null
+            if (!value) { 
+                errorDiv.textContent = "Full description required"; 
+                errorDiv.style.display = "block"; 
                 fullDesc.classList.add("invalid");
 
                 return false;
             }
 
             // Adds errors depending on whether the description is too long or too short
-            if (value.length < 100) { // The description must be between 10 and 300 characters
+            if (value.length < 100) {
                 errorDiv.textContent = "Description is too short";
-                errorDiv.style.display = "block"; // Div becomes visible
+                errorDiv.style.display = "block"; 
                 fullDesc.classList.add("invalid");
 
                 return false;
             } else if (value.length > 1000) {
                 errorDiv.textContent = "Description is too long";
-                errorDiv.style.display = "block"; // Div becomes visible
+                errorDiv.style.display = "block";
                 fullDesc.classList.add("invalid");
 
                 return false;
             }
             errorDiv.textContent = "";
-            errorDiv.style.display = "none"; // Div becomes visible
+            errorDiv.style.display = "none"; 
             fullDesc.classList.remove("invalid");
             return true;
         }
 
         function validateImage() {
-            const value = imageInput.value.trim(); // Gets image value
-            const errorDiv = document.querySelector(".image-errors"); // Gets the image errors div
-
-            if (!value) { // If value field is empty
-                errorDiv.textContent = "Image required"; // Checks if value is empty(false), if not error div is empty
-                errorDiv.style.display = "block"; // Div becomes visible
+            const value = imageInput.value.trim(); 
+            const errorDiv = document.querySelector(".image-errors"); 
+            
+            // Validates that the image is not null
+            if (!value) { 
+                errorDiv.textContent = "Image required"; 
+                errorDiv.style.display = "block"; 
                 imageInput.classList.add("invalid");
 
                 return false;
             }
 
             errorDiv.textContent = "";
-            errorDiv.style.display = "none"; // Div becomes visible
+            errorDiv.style.display = "none";
             imageInput.classList.remove("invalid");
             return true;
         }
