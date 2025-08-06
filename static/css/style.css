@@ -397,12 +397,37 @@ label.button {
 /* #endregion */
 
 
-/* Map display */
-.map {
-    height: 600px;
-    width: 50%;
+/* #region Map Page */
+
+/* Map layout wraps the whole page in a div */
+.map-layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 2rem;
 }
 
+/* Map display */
+.map {
+    flex: 2;
+    height: 600px;
+    min-width: 300px;
+    max-width: 50%;
+    border: 8px outset var(--color-mustard);
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Side info of map page */
+.sidebar {
+    flex: 1;
+    min-width: 250px;
+    max-width: 450px;
+}
+
+/* #endregion */
 
 /* #region Dropdown*/
 /* Styles a dropdown and its content, specifically for a multiselect form field. */

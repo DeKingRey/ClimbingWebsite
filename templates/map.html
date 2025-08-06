@@ -1,284 +1,287 @@
 {% extends 'layout.html' %}
 {% block content %}
+    <div class="map-layout">
+        <!-- Popup Div for add route form -->
+        <div class="popup" id="route-popup">
+            <div class="popup-inner">
+                <button data-popup-close class="close-button">&times;</button>
+                <h2>Add Route</h2>
+                <!-- This is the form to add a route, with the route name, grade, amount of bolts, location, and types. -->
+                <form id="add_route_form" action="{{ url_for('add_route') }}" method="POST"> 
+                    <div class="form-group">
+                        <label for="name">Route Name</label>
+                        <input type="text" id="name" name="name" required> 
 
-    {% if username %}
-        <button data-popup-target="route-popup" class="button">Add Route</button> <!-- This button has a custom data field which is used by JS to know what popup it is trying to access-->
-    {% else %}
-        <button class="button" onclick="location.href='/login'">Log in to Add a Route or Location</button> <!-- Redirects to the login page if they are not logged in -->
-    {% endif %}
-
-    <div class="popup" id="route-popup"> <!-- Popup Div-->
-        <div class="popup-inner"> <!-- Popup Content -->
-            <button data-popup-close class="close-button">&times;</button>
-            <h2>Add Route</h2>
-            <form id="add_route_form" action="{{ url_for('add_route') }}" method="POST"> <!-- This is the form to add a route, with the route name, grade, amount of bolts, location, and types. -->
-                <div class="form-group">
-                    <label for="name">Route Name</label>
-                    <input type="text" id="name" name="name" required> 
-
-                    <div class="form-error name-errors" style="display: none;"></div> <!-- Div which will display route name errors -->
-                </div>
-
-                <div class="form-group">
-                    <label for="grade">Grade</label>
-                    <input type="text" id="grade" name="grade" required>
-                    
-                    <div class="form-error grade-errors" style="display: none;"></div> <!-- Div which will display grade errors -->
-                </div>
-                
-                <div class="form-group">
-                    <label for="bolts">Amount of Bolts</label>
-                    <input type="text" name="bolts" id="bolts"> 
-
-                    <div class="form-error bolts-errors" style="display: none;"></div> <!-- Div which will display bolts errors -->
-                </div>
-                
-                <div class="form-group">
-                    <div class="location-wrapper">
-                        <label for="location">Location</label>
-                        <input type="text" placeholder="Search..." name="location" id="location_input" autocomplete="off"  required>
-                        <ul class="suggestions" id="locations"></ul> 
-                    </div> <!-- Creates the input field and search bar for locations, first having a text input field, and then using suggestions as a list which will display search suggestions. -->
-
-                    <div class="form-error location-errors" style="display: none;"></div> <!-- Div which will display location errors -->
-                </div>
-
-                <input type="hidden" name="url" id="url" value="{{ request.full_path }}"> <!-- Gets the current url route-->
-
-                <div class="form-group">
-                    <label for="types">Types</label>
-                    <div class="dropdown">
-                        <button type="button" class="button">Select Types</button>
-                        <div class="dropdown-content">
-                            {% for type in types %}
-                               <label><input type="checkbox" name="types[]" value="{{type[0]}}">{{type[1]}}</label>
-                            {% endfor %}
-                        </div> <!-- Types goes through all given types and adds them to the multiselect dropdown. -->
+                        <div class="form-error name-errors" style="display: none;"></div> <!-- Div which will display route name errors -->
                     </div>
 
-                    <div class="form-error types-errors" style="display: none;"></div> <!-- Div which will display types errors -->
-                </div>
-                
-                <div class="form-group">
-                    <button type="submit" class="button submit-button">Submit</button>
-                </div>
-            </form>
+                    <div class="form-group">
+                        <label for="grade">Grade</label>
+                        <input type="text" id="grade" name="grade" required>
+                        
+                        <div class="form-error grade-errors" style="display: none;"></div> <!-- Div which will display grade errors -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bolts">Amount of Bolts</label>
+                        <input type="text" name="bolts" id="bolts"> 
+
+                        <div class="form-error bolts-errors" style="display: none;"></div> <!-- Div which will display bolts errors -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="location-wrapper">
+                            <label for="location">Location</label>
+                            <input type="text" placeholder="Search..." name="location" id="location_input" autocomplete="off"  required>
+                            <ul class="suggestions" id="locations"></ul> 
+                        </div> <!-- Creates the input field and search bar for locations, first having a text input field, and then using suggestions as a list which will display search suggestions. -->
+
+                        <div class="form-error location-errors" style="display: none;"></div> <!-- Div which will display location errors -->
+                    </div>
+
+                    <input type="hidden" name="url" id="url" value="{{ request.full_path }}"> <!-- Gets the current url route-->
+
+                    <div class="form-group">
+                        <label for="types">Types</label>
+                        <div class="dropdown">
+                            <button type="button" class="button">Select Types</button>
+                            <div class="dropdown-content">
+                                {% for type in types %}
+                                <label><input type="checkbox" name="types[]" value="{{type[0]}}">{{type[1]}}</label>
+                                {% endfor %}
+                            </div> <!-- Types goes through all given types and adds them to the multiselect dropdown. -->
+                        </div>
+
+                        <div class="form-error types-errors" style="display: none;"></div> <!-- Div which will display types errors -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="button submit-button">Submit</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
 
-    <div class="popup" id="loc-popup">
-        <div class="popup-inner">
-            <button data-popup-close class="close-button">&times;</button>
-            <h2>Add Location</h2>
-            <form action="{{ url_for('add_location') }}" method="POST" enctype="multipart/form-data" id="add_loc_form">
-                <!-- Name input field -->
-                <div class="form-group">
-                    <label for="name">Name</label>
-                    <input type="text" name="name" id="name" required>
+        <div class="popup" id="loc-popup">
+            <div class="popup-inner">
+                <button data-popup-close class="close-button">&times;</button>
+                <h2>Add Location</h2>
+                <form action="{{ url_for('add_location') }}" method="POST" enctype="multipart/form-data" id="add_loc_form">
+                    <!-- Name input field -->
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" name="name" id="name" required>
 
-                    <div class="form-error loc-name-errors" style="display: none;"></div> <!-- Div which will display loc name errors -->
-                </div>
-                
-                <!-- Setting input field -->
-                <div class="form-group">
-                    <label for="setting">Setting</label>
-                    <!-- Loops through the settings and creates options for them--> 
-                    <select name="setting" id="setting">
-                        {% for setting in settings %}
-                            <option value="{{setting[0]}}" required>{{setting[1]}}</option >
-                        {% endfor %}
-                    </select> 
-                </div>
+                        <div class="form-error loc-name-errors" style="display: none;"></div> <!-- Div which will display loc name errors -->
+                    </div>
+                    
+                    <!-- Setting input field -->
+                    <div class="form-group">
+                        <label for="setting">Setting</label>
+                        <!-- Loops through the settings and creates options for them--> 
+                        <select name="setting" id="setting">
+                            {% for setting in settings %}
+                                <option value="{{setting[0]}}" required>{{setting[1]}}</option >
+                            {% endfor %}
+                        </select> 
+                    </div>
 
-                <!-- Image input field -->
-                <div class="form-group">
-                    <label for="image" class="button">Add Image</label>
-                    <input type="file" id="image" name="image" accept="image/*" style="display: none;">
+                    <!-- Image input field -->
+                    <div class="form-group">
+                        <label for="image" class="button">Add Image</label>
+                        <input type="file" id="image" name="image" accept="image/*" style="display: none;">
 
-                    <img src="#" alt="Image Preview" id="photo-preview" class="photo-preview location-preview">
+                        <img src="#" alt="Image Preview" id="photo-preview" class="photo-preview location-preview">
 
-                    <div class="form-error loc-image-errors" style="display: none;"></div> <!-- Div which will display image errors -->
-                </div>
+                        <div class="form-error loc-image-errors" style="display: none;"></div> <!-- Div which will display image errors -->
+                    </div>
 
-                <input type="hidden" name="lat" id="lat">
-                <input type="hidden" name="lon" id="lon">
+                    <input type="hidden" name="lat" id="lat">
+                    <input type="hidden" name="lon" id="lon">
 
-                <div class="form-group">
-                    <button type="submit" class="button submit-button">Submit</button>
-                </div>
-            </form>
+                    <div class="form-group">
+                        <button type="submit" class="button submit-button">Submit</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
 
-    <script>
-        locs = {{ locations|tojson }};
-        const routes = {{ climb_routes|tojson }};
-    </script>
-    <script src="/static/js/preview.js"></script>
-    <script src="/static/js/add_route_errors.js"></script>
-    <script>
-        const locForm = document.getElementById("add_loc_form");
+        <script>
+            locs = {{ locations|tojson }};
+            const routes = {{ climb_routes|tojson }};
+        </script>
+        <script src="/static/js/preview.js"></script>
+        <script src="/static/js/add_route_errors.js"></script>
+        <script>
+            const locForm = document.getElementById("add_loc_form");
 
-        // Gets all the input fields
-        const locNameInput = locForm.elements.namedItem("name").trim();
-        const locImageInput = locForm.image;
+            // Gets all the input fields
+            const locNameInput = locForm.elements.namedItem("name");
+            const locImageInput = locForm.image;
 
-        function validateName() {
-            const value = locNameInput.value.trim(); 
-            const errorDiv = document.querySelector(".loc-name-errors");
+            function validateName() {
+                const value = locNameInput.value.trim(); 
+                const errorDiv = document.querySelector(".loc-name-errors");
 
-            // Validates whether input field is empty
-            if (!value) { 
-                errorDiv.textContent = "Location name required";
-                errorDiv.style.display = "block"; 
-                locNameInput.classList.add("invalid");
+                // Validates whether input field is empty
+                if (!value) { 
+                    errorDiv.textContent = "Location name required";
+                    errorDiv.style.display = "block"; 
+                    locNameInput.classList.add("invalid");
 
-                return false;
-            }
-            // Validates that the length of the name isn't too long
-            else if (value.length > 100) {
-                errorDiv.textContent = "Location name must be less than 100 characters";
-                errorDiv.style.display = "block"; 
-                locNameInput.classList.add("invalid");
+                    return false;
+                }
+                // Validates that the length of the name isn't too long
+                else if (value.length > 100) {
+                    errorDiv.textContent = "Location name must be less than 100 characters";
+                    errorDiv.style.display = "block"; 
+                    locNameInput.classList.add("invalid");
 
-                return false;
-            }
+                    return false;
+                }
 
-            errorDiv.textContent = "";
-            errorDiv.style.display = "none";
-            locNameInput.classList.toggle("invalid", false);
-            return true;
-        }
-
-        function validateImage() {
-            const value = locImageInput.value.trim(); 
-            const errorDiv = document.querySelector(".loc-image-errors"); 
-            
-            // Validates that the image is not null
-            if (!value) { 
-                errorDiv.textContent = "Image required"; 
-                errorDiv.style.display = "block"; 
-                locImageInput.classList.add("invalid");
-
-                return false;
+                errorDiv.textContent = "";
+                errorDiv.style.display = "none";
+                locNameInput.classList.toggle("invalid", false);
+                return true;
             }
 
-            errorDiv.textContent = "";
-            errorDiv.style.display = "none";
-            locImageInput.classList.remove("invalid");
-            return true;
-        }
+            function validateImage() {
+                const value = locImageInput.value.trim(); 
+                const errorDiv = document.querySelector(".loc-image-errors"); 
+                
+                // Validates that the image is not null
+                if (!value) { 
+                    errorDiv.textContent = "Image required"; 
+                    errorDiv.style.display = "block"; 
+                    locImageInput.classList.add("invalid");
 
-        // Adds event listeners to all input fields, waiting for input
-        locNameInput.addEventListener("input", validateName);
-        locImageInput.addEventListener("input", validateImage);
+                    return false;
+                }
 
-
-        // Adds event listener to submit button
-        locForm.addEventListener("submit", function(e) {
-            // Checks validators
-            const valid = 
-                validateName() &&
-                validateImage();
-
-            // If any come back false it will prevent submission, and reopen location popup
-            if (!valid) {
-                e.preventDefault();
-                document.getElementById("loc-popup").classList.add("open");
+                errorDiv.textContent = "";
+                errorDiv.style.display = "none";
+                locImageInput.classList.remove("invalid");
+                return true;
             }
+
+            // Adds event listeners to all input fields, waiting for input
+            locNameInput.addEventListener("input", validateName);
+            locImageInput.addEventListener("input", validateImage);
+
+
+            // Adds event listener to submit button
+            locForm.addEventListener("submit", function(e) {
+                // Checks validators
+                const valid = 
+                    validateName() &&
+                    validateImage();
+
+                // If any come back false it will prevent submission, and reopen location popup
+                if (!valid) {
+                    e.preventDefault();
+                    document.getElementById("loc-popup").classList.add("open");
+                }
+            });
+        </script>
+
+        <script> // Script for location search bar
+            const locs = {{ locations|tojson }} // Gets location info
+            const input = document.getElementById("location_input")
+            const suggestions = document.getElementById("locations")
+
+            input.addEventListener("input", () => {
+                const query = input.value.trim().toLowerCase(); // Gets the users input and removes spaces and makes it lowercase
+                suggestions.innerHTML = ""; 
+
+                if (!query) return;
+
+                const matches = locs.filter(loc =>
+                    loc.toLowerCase().includes(query)
+                ); // Checks for locations which include the inputted search
+
+            matches.forEach(match => {
+                const li = document.createElement("li");
+                li.textContent = match;
+                li.addEventListener("click", () => {
+                    input.value = match;
+                    suggestions.innerHTML = "";
+                    validateLocation(); // Revalidates location
+                });
+                suggestions.appendChild(li);
+            }); // For each match it will create a list element and allow the user to click on it to set that to the inputs value
         });
-    </script>
+        </script>
 
-    <script> // Script for location search bar
-        const locs = {{ locations|tojson }} // Gets location info
-        const input = document.getElementById("location_input")
-        const suggestions = document.getElementById("locations")
+        <!-- This sets up the div where the map will be displayed -->
+        <div id="map" class="map"></div>    
 
-        input.addEventListener("input", () => {
-            const query = input.value.trim().toLowerCase(); // Gets the users input and removes spaces and makes it lowercase
-            suggestions.innerHTML = ""; 
+        <div class="sidebar">
+            <!-- Will allow users to open popup if they are logged in-->
+            {% if username %}
+                <button data-popup-target="route-popup" class="button">+ Add Route</button>
+                <h3>Right Click Anywhere to Add a Location</h3>
+            {% else %}
+                <button class="button" onclick="location.href='/login'">Log in to Add a Route or Location</button>
+            {% endif %}
+        </div>
 
-            if (!query) return;
+        <!-- This is the CSS file for leaflet -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""/>
+        <!-- This is the JS file for leaflet -->
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
 
-            const matches = locs.filter(loc =>
-                loc.toLowerCase().includes(query)
-            ); // Checks for locations which include the inputted search
+        <!-- This script will setup the map -->
+        <script>
+            var coords = [-41.364442, 174.468384]
 
-        matches.forEach(match => {
-            const li = document.createElement("li");
-            li.textContent = match;
-            li.addEventListener("click", () => {
-                input.value = match;
-                suggestions.innerHTML = "";
-                validateLocation(); // Revalidates location
-            });
-            suggestions.appendChild(li);
-        }); // For each match it will create a list element and allow the user to click on it to set that to the inputs value
-    });
-    </script>
+            // This sets up a new Leaflet map, and accesses our map div with its id, then it defines its starting point, with the coordinates and zoom.
+            var map = L.map("map").setView(coords, 5);
 
-    {% if username %}
-        <h3>Right Click Anywhere to Add a Location</h3>
-    {% endif %}
+            // This sets up the tile layer which uses a URL template for the tile images, in this case it will be an open street map
+            L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                // This sets the maximum zoom you can do for this layer
+                maxZoom: 19,
+                // This is the attribution for open street map
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
 
-    <!-- This sets up the div where the map will be displayed -->
-    <div id="map" class="map"></div>    
+            // Gets the markers dictionary
+            var markers = {{ markers|tojson }}
+            // Loops through it, the key will be the output each time
+            for (var key in markers)
+            {
+                // Uses the key(id) to get coords and name
+                coords = markers[key][0]
+                name = markers[key][1]
+                slug = markers[key][2]
 
-    <!-- This is the CSS file for leaflet -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""/>
-    <!-- This is the JS file for leaflet -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""></script>
+                // Sets the marker using the coords and adds it to the map
+                var marker = L.marker(coords).addTo(map);
+                // Makes a popup for the marker which leads to the routes page using the id, and it uses the name as the display
+                marker.bindPopup(`<a href="/map/${slug}?id=${key}">${name}</a>`)
+            }   
+            
+            if ({{ username|tojson }}) 
+            {
+                map.on("contextmenu", function(e) {
+                    const lat = e.latlng.lat;
+                    const lon = e.latlng.lng; // Gets the latitude and longitude of where you right clicked
 
-    <!-- This script will setup the map -->
-    <script>
-        var coords = [-41.364442, 174.468384]
+                    document.getElementById("lat").value = lat
+                    document.getElementById("lon").value = lon // Sets the hidden location form values of lat and lon to the chosen values
 
-        // This sets up a new Leaflet map, and accesses our map div with its id, then it defines its starting point, with the coordinates and zoom.
-        var map = L.map("map").setView(coords, 5);
+                    const popup = document.getElementById("loc-popup");
+                    popup.classList.add("open"); // Opens the add location form
+                });
+            }
+        </script>
 
-        // This sets up the tile layer which uses a URL template for the tile images, in this case it will be an open street map
-        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            // This sets the maximum zoom you can do for this layer
-            maxZoom: 19,
-            // This is the attribution for open street map
-            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(map);
-
-        // Gets the markers dictionary
-        var markers = {{ markers|tojson }}
-        // Loops through it, the key will be the output each time
-        for (var key in markers)
-        {
-            // Uses the key(id) to get coords and name
-            coords = markers[key][0]
-            name = markers[key][1]
-            slug = markers[key][2]
-
-            // Sets the marker using the coords and adds it to the map
-            var marker = L.marker(coords).addTo(map);
-            // Makes a popup for the marker which leads to the routes page using the id, and it uses the name as the display
-            marker.bindPopup(`<a href="/map/${slug}?id=${key}">${name}</a>`)
-        }   
-        
-        if ({{ username|tojson }}) 
-        {
-            map.on("contextmenu", function(e) {
-                const lat = e.latlng.lat;
-                const lon = e.latlng.lng; // Gets the latitude and longitude of where you right clicked
-
-                document.getElementById("lat").value = lat
-                document.getElementById("lon").value = lon // Sets the hidden location form values of lat and lon to the chosen values
-
-                const popup = document.getElementById("loc-popup");
-                popup.classList.add("open"); // Opens the add location form
-            });
-        }
-    </script>
-
-    <script src="/static/js/popup.js"></script>
+        <script src="/static/js/popup.js"></script>
+    </div>
 
 {% endblock %}

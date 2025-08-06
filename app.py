@@ -354,8 +354,6 @@ def add_location():
     lat = request.form.get("lat")
     lon = request.form.get("lon")
     setting_id = request.form.get("setting")
-    filename = photos.save(request.files["image"])
-    file_url = url_for("get_file", filename=filename)
 
     # Validates name field, making sure its not null or too big
     if len(name) <= 0 or len(name) > 100:
@@ -378,16 +376,30 @@ def add_location():
         # Validates that the setting id is a valid id
         if int(setting_id) not in setting_ids:
             has_errors = True
+
+    # Validates image input
+    image_file = request.files.get("image")
+    if not image_file or image_file.filename.strip() == "":
+        has_errors = True
+    else:
+        try:
+            # Attempts to save the filename
+            saved_filename = photos.save(image_file)
+            file_url = url_for("get_file", filename=saved_filename)
+        except UploadNotAllowed:
+            has_errors= True
+
+    # Inserts route if no errors are present
+    if not has_errors:
+        coordinates = f"{request.form.get('lat')} {request.form.get('lon')}"
+        cur.execute("INSERT INTO Location (name, coordinates, setting_id, image, pending) VALUES(?, ?, ?, ?, 1)", (name, coordinates, setting_id, file_url,))
         
-    
-
-    coordinates = f"{request.form.get('lat')} {request.form.get('lon')}"
-    cur.execute("INSERT INTO Location (name, coordinates, setting_id, image, pending) VALUES(?, ?, ?, ?, 1)", (name, coordinates, setting_id, file_url,))
-    
-    con.commit()
-    con.close()
-    flash("Your location is now pending approval", "info")
-
+        con.commit()
+        con.close()
+        flash("Your location is now pending approval", "info")
+    else:
+        flash("Invalid Form Submission", "error")\
+        
     return redirect(url_for("climbing_map"))
 
 
