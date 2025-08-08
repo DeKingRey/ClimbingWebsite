@@ -381,7 +381,7 @@ def add_location():
     image_file = request.files.get("image")
     if not image_file or image_file.filename.strip() == "":
         has_errors = True
-    else:
+    elif not has_errors:
         try:
             # Attempts to save the filename
             saved_filename = photos.save(image_file)
@@ -774,7 +774,7 @@ def add_event():
         image_file = request.files.get("image")
         if not image_file or image_file.filename.strip() == "":
             errors["image"] = "Image required"
-        else:
+        elif errors == {}:
             try:
                 # Attempts to save the filename
                 saved_filename = photos.save(image_file)

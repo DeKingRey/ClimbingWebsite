@@ -1,16 +1,19 @@
 {% extends 'layout.html' %}
 {% block content %}
-    <h1>{{info[0]}}</h1> <!-- The routes name. -->
-    <p>Type: {% for i in info[1] %} {{i}} {% endfor %}<br> <!-- Goes through all the types in the route array and displays them. -->
-        Grade: {{info[2]}} <br>
-        Bolts: {{info[3]}} <br>
-        Location: {{info[4]}}</p>
-    
-    {% if username %}
-        <button data-popup-target="log-popup" class="button">Log Route</button> <!-- This button has a custom data field which is used by JS to know what popup it is trying to access-->
-    {% else %}
-        <button class="button" onclick="location.href='/login'">Log in to Log a Route</button> <!-- Redirects to the login page if they are not logged in -->
-    {% endif %}
+    <div class="route-container" style="width: 30%; line-height: 3.5rem; background-color: #faf6eb">
+        <h1>{{info[0]}}</h1> <!-- The routes name. -->
+        <div class="divider"></div>
+        <p><span class="semi-bold">Type:</span> {% for i in info[1] %} {{i}} {% endfor %}<br> <!-- Displays types -->
+            <span class="semi-bold">Grade:</span> {{info[2]}} <br>
+            <span class="semi-bold">Bolts:</span> {{info[3]}} <br>
+            <span class="semi-bold">Location:</span> {{info[4]}}</p>
+        
+        {% if username %}
+            <button data-popup-target="log-popup" class="button">Log Route</button> <!-- This button has a custom data field which is used by JS to know what popup it is trying to access-->
+        {% else %}
+            <button class="button" onclick="location.href='/login'">Log in to Log a Route</button> <!-- Redirects to the login page if they are not logged in -->
+        {% endif %}
+    </div>
 
     <div class="popup" id="log-popup"> <!-- Popup Div-->
         <div class="popup-inner"> <!-- Popup Content -->

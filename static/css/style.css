@@ -68,6 +68,10 @@ p {
     margin: 0;
 }
 
+.semi-bold {
+    font-weight: 600;
+}
+
 /* Divider class to create a divider between headings and content */
 .divider {
     height: 6px;
@@ -104,6 +108,13 @@ footer {
     text-align: center;
     color: var(--color-charcoal);
     margin-top: 30px;
+}
+
+.hint-container {
+    background-color: var(--color-sunshine);
+    padding: 5px;
+    border-radius: 20px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
 /*#endregion*/
 
@@ -418,13 +429,15 @@ label.button {
     border: 8px outset var(--color-mustard);
     border-radius: 20px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    align-self: center;
 }
 
 /* Side info of map page */
 .sidebar {
     flex: 1;
+    align-self: center;
     min-width: 250px;
-    max-width: 450px;
+    max-width: 550px;
 }
 
 /* #endregion */
@@ -744,7 +757,7 @@ isn't clicked*/
     transform: translateY(-2px);
 } /* Changes the background color when hovered over*/
 
-.center-form, .event-info-container {
+.center-form, .event-info-container, .sidebar, .route-container {
     text-align: center;
     padding: 20px;
     background-color: #fdfdf8;

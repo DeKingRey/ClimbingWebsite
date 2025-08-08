@@ -217,10 +217,19 @@
         <div id="map" class="map"></div>    
 
         <div class="sidebar">
+            <h2>How to Use</h2>
+            <div class="divider"></div>
+            <p style="line-height: 2rem;">You can use this map to view climbing locations around primarily New Zealand. <br>
+            When going into a location you can view the climbing routes within it and log them as completed to add to your profile. <br><br>
+            If any locations or routes that you know aren't on the map you can add them too - once you do they will be awaiting approval by an admin.</p>
+
             <!-- Will allow users to open popup if they are logged in-->
             {% if username %}
-                <button data-popup-target="route-popup" class="button">+ Add Route</button>
-                <h3>Right Click Anywhere to Add a Location</h3>
+                <button data-popup-target="route-popup" class="button" style="font-size: 1.5rem;">+ Add Route</button>
+                <div class="hint-container" style="margin-top: 20px;"><p style="font-size: 25px;">
+                    <span style="font-weight: 600;">Right Click</span> 
+                    Anywhere on the Map to 
+                    <span style="font-weight: 600;">Add a Location</span>!</p></div>
             {% else %}
                 <button class="button" onclick="location.href='/login'">Log in to Add a Route or Location</button>
             {% endif %}
