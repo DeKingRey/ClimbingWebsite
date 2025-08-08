@@ -3,18 +3,13 @@ A climbing flask website to aid climbers to find climbs and communicate
 By Miguel Monreal on 27/03/25"""
 
 import sqlite3
-import os 
 from dotenv import load_dotenv
-from datetime import datetime 
-load_dotenv()
-
-
+from datetime import datetime
 from flask import Flask, render_template, redirect, url_for, send_from_directory, request, session, jsonify, flash
-
 from flask_bcrypt import Bcrypt, check_password_hash
 from flask_uploads import UploadSet, IMAGES, configure_uploads, UploadNotAllowed
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileRequired, FileAllowed
+from flask_wtf.file import FileField, FileAllowed
 from wtforms.validators import DataRequired, Length, EqualTo, Optional, NoneOf, ValidationError
 from wtforms import StringField, PasswordField, SubmitField
 
@@ -22,12 +17,12 @@ from slugify import slugify
 
 from banned_words import BANNED_WORDS
 
-
+load_dotenv()
 app = Flask(__name__)
 # This secret key is required for Flask-WTF to protect against CSRF attacks
 # app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 app.config["SECRET_KEY"] = "T8OR437B9&i#e^*&b)p(*:o#iuef(*yoliu))"
-# Sets the destination for uploaded photos to the 'uploads' folder and configures uploads
+# Sets destination for uploaded photos to 'uploads' folder + configures them
 app.config["UPLOADED_PHOTOS_DEST"] = "uploads"
 photos = UploadSet("photos", IMAGES)
 configure_uploads(app, photos)
@@ -43,22 +38,24 @@ def NoSpaces(message):
     return _no_spaces
 
 
-# This creates a class which can be used to make forms(specifically for accounts)
+# Creates a class which can be used to make forms(specifically for accounts)
 class RegisterForm(FlaskForm):
     # Username field with validation for length and profanitys
-    name = StringField("Name", validators=[DataRequired("Field should not be empty"),
-                                           NoneOf(BANNED_WORDS, message="Please avoid using inappropriate language"),
-                                           Length(min=3, max=20, message="Username must be between 3 and 20 characters long"),
-                                           NoSpaces(message="Username must not contain spaces")
-                                           ])
-    # Creates a password field which can't be empty and has to be at least 8 characters long
+    name = StringField("Name", validators=[
+                            DataRequired("Field should not be empty"),
+                            NoneOf(BANNED_WORDS, message="Please avoid using inappropriate language"),
+                            Length(min=3, max=20, message="Username must be between 3 and 20 characters long"),
+                            NoSpaces(message="Username must not contain spaces")
+                        ])
+    # Creates password field which has to be a min of 8 characters and inputted
     password = PasswordField("Password", validators=[
         DataRequired("Field should not be empty"), 
         Length(min=8, max=32, message="Password must be between 8 and 32 characters long"),
         NoSpaces(message="Password must not contain spaces")
         ])
     # Validatation of confirm password field matching password
-    confirm_password = PasswordField("Confirm_Password", validators=[EqualTo("password", "Passwords are not matching")])
+    confirm_password = PasswordField("Confirm_Password", 
+                                     validators=[EqualTo("password", "Passwords are not matching")])
     # Creates a file field where the profile picture can be optionally uploaded
     photo = FileField(
         validators= [
@@ -87,8 +84,7 @@ def inject_user():
 
 @app.route("/")
 def home():
-    user_id = session.get("user_id")
-    
+    user_id = session.get("user_id")  
     if user_id is not None:
         # Gets accounts info when logging in to be used across the website
         con = sqlite3.connect("climbing.db")
