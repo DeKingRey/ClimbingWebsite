@@ -1,0 +1,15 @@
+DB_NAME = "climbing.db"
+
+# Constants
+ZERO = 0
+
+MAX_NAME_LENGTH = 100
+
+MAX_GRADE_LENGTH = 10
+
+MAX_BOLTS_VALUE = 1000
+
+MIN_LAT = -90
+MAX_LAT = 90
+MIN_LON = -180
+MAX_LON = 180

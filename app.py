@@ -5,22 +5,32 @@ By Miguel Monreal on 27/03/25"""
 import sqlite3
 from dotenv import load_dotenv
 from datetime import datetime
-from flask import Flask, render_template, redirect, url_for, send_from_directory, request, session, jsonify, flash
+from flask import (
+    Flask, render_template, redirect, url_for,
+    send_from_directory, request, session, jsonify, flash
+)
 from flask_bcrypt import Bcrypt, check_password_hash
-from flask_uploads import UploadSet, IMAGES, configure_uploads, UploadNotAllowed
+from flask_uploads import (
+    UploadSet, IMAGES, configure_uploads, UploadNotAllowed
+)
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms.validators import DataRequired, Length, EqualTo, Optional, NoneOf, ValidationError
+from wtforms.validators import (
+    DataRequired, Length, EqualTo, Optional, NoneOf, ValidationError
+)
 from wtforms import StringField, PasswordField, SubmitField
 
 from slugify import slugify
 
 from banned_words import BANNED_WORDS
+from config import (
+    DB_NAME, ZERO, MAX_NAME_LENGTH, MAX_GRADE_LENGTH, MAX_BOLTS_VALUE,
+    MIN_LAT, MAX_LAT, MIN_LON, MAX_LON
+)
 
 load_dotenv()
 app = Flask(__name__)
 # This secret key is required for Flask-WTF to protect against CSRF attacks
-# app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 app.config["SECRET_KEY"] = "T8OR437B9&i#e^*&b)p(*:o#iuef(*yoliu))"
 # Sets destination for uploaded photos to 'uploads' folder + configures them
 app.config["UPLOADED_PHOTOS_DEST"] = "uploads"
@@ -43,22 +53,25 @@ class RegisterForm(FlaskForm):
     # Username field with validation for length and profanitys
     name = StringField("Name", validators=[
                             DataRequired("Field should not be empty"),
-                            NoneOf(BANNED_WORDS, message="Please avoid using inappropriate language"),
-                            Length(min=3, max=20, message="Username must be between 3 and 20 characters long"),
+                            NoneOf(BANNED_WORDS,
+                                   message="Please avoid using inappropriate language"),
+                            Length(min=3, max=20,
+                                   message="Username must be between 3 and 20 characters long"),
                             NoSpaces(message="Username must not contain spaces")
                         ])
     # Creates password field which has to be a min of 8 characters and inputted
     password = PasswordField("Password", validators=[
-        DataRequired("Field should not be empty"), 
-        Length(min=8, max=32, message="Password must be between 8 and 32 characters long"),
+        DataRequired("Field should not be empty"),
+        Length(min=8, max=32,
+               message="Password must be between 8 and 32 characters long"),
         NoSpaces(message="Password must not contain spaces")
         ])
     # Validatation of confirm password field matching password
-    confirm_password = PasswordField("Confirm_Password", 
+    confirm_password = PasswordField("Confirm_Password",
                                      validators=[EqualTo("password", "Passwords are not matching")])
     # Creates a file field where the profile picture can be optionally uploaded
     photo = FileField(
-        validators= [
+        validators=[
             # Only allows the file types in the 'photos' upload set
             FileAllowed(photos, "Invalid file type"),
             Optional()
@@ -84,12 +97,14 @@ def inject_user():
 
 @app.route("/")
 def home():
-    user_id = session.get("user_id")  
+    user_id = session.get("user_id")
     if user_id is not None:
         # Gets accounts info when logging in to be used across the website
-        con = sqlite3.connect("climbing.db")
+        con = sqlite3.connect(DB_NAME)
         cur = con.cursor()
-        cur.execute("SELECT profile_picture, username, permission_level, display_name, date FROM Account WHERE id = ?", (user_id,))
+        cur.execute("""SELECT profile_picture, username,
+                    permission_level, display_name, date
+                    FROM Account WHERE id = ?""", (user_id,))
         result = cur.fetchone()
         # Sets all session variables
         session["profile_picture"] = result[0]
@@ -99,11 +114,11 @@ def home():
         session["date"] = result[4]
         con.close()
     else:
-        profile_picture = None
-        username = None
-        permission_level = 0
-        display_name = None
-        date = None
+        session["profile_picture"] = None
+        session["username"] = None
+        session["permission_level"] = 0
+        session["display_name"] = None
+        session["date"] = None
 
     return render_template("home.html", header="Home")
 
@@ -122,29 +137,30 @@ def climbing_map():
     settings = get_settings()
     routes = get_routes()
 
-    return render_template("map.html", header="Map", markers=markers, types=types, locations=locations, settings=settings, climb_routes=routes)
+    return render_template("map.html", header="Map", markers=markers,
+                           types=types, locations=locations,
+                           settings=settings, climb_routes=routes)
 
 
 def get_map_info():
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
-    # Gets the info which will be used for the markers
-    cur.execute("SELECT id, name, coordinates FROM Location WHERE pending = 0;")
+    # Gets location marker info, for locations that aren't pending
+    cur.execute("""SELECT id, name, coordinates
+                FROM Location WHERE pending = 0;""")
     results = cur.fetchall()
 
     markers = {}
-    for result in results: 
-        # Makes a list with coords and name and splits them to be used individually
+    # Creates a dictionary for the markers using info as value and id as key
+    for result in results:
         info = [result[2].split(), result[1], slugify(result[1])]
-        # Sets the ID as the key, and the previous list of info as the value to use for all markers
         markers[result[0]] = info
-        
     return markers
 
 
 def get_route_types():
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
     cur.execute("SELECT id, name FROM Type;")
@@ -154,7 +170,7 @@ def get_route_types():
 
 
 def get_locations():
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
     cur.execute("SELECT name FROM Location WHERE pending = 0;")
@@ -162,27 +178,28 @@ def get_locations():
 
     locations = []
     for location in results:
-        locations.append(location[0]) 
+        locations.append(location[0])
 
     return locations
 
 
 def get_routes():
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
+    # Gets routes which aren't pending
     cur.execute("SELECT name FROM Route WHERE pending = 0;")
     results = cur.fetchall()
 
     routes = []
     for route in results:
-        routes.append(route[0]) 
+        routes.append(route[0])
 
     return routes
 
 
 def get_settings():
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
     cur.execute("SELECT id, name FROM setting;")
@@ -196,59 +213,59 @@ def map_location(name):
     id = request.args.get("id")
     types = get_route_types()
 
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
     routes = get_routes()
 
-    # Executes a query to join the Route_Type bridging table, and uses the current routes id
-    cur.execute("""SELECT Location.name, Route.id, Route.name, Location.image FROM Location
+    # Gets location info, joining route table to include the locations routes
+    cur.execute("""SELECT Location.name, Route.id, Route.name, Location.image
+                FROM Location
                 JOIN Route ON Route.location_id = Location.id
                 WHERE Location.id = ? AND Route.pending = 0;""", (id,))
-    
     results = cur.fetchall()
-    if results == []: # If there are no routes only get location info
-        cur.execute("SELECT name, id, image FROM Location WHERE id = ?;", (id,))
+    if results == []:  # If there are no routes only get location info
+        cur.execute("""SELECT name, id, image
+                    FROM Location WHERE id = ?;""", (id,))
         info = cur.fetchall()
-    else:
+    else:  # Gets route info to display otherwise
         location = results[0][0]
         image = results[0][3]
-        # Makes a list with the location name, and then a dicitionary with the routes within it
         info = [[location, slugify(location), image], {}]
 
+        # Adds values to dict so route page can be accessed
         for result in results:
             route_id = result[1]
             route_name = result[2]
-            # Sets the key to the route id, and then the value is a list with the name and slugified name
             info[1][route_id] = [route_name, slugify(route_name)]
 
-    return render_template("location.html", header="Map", info=info, types=types, climb_routes=routes)
+    return render_template("location.html", header="Map", info=info,
+                           types=types, climb_routes=routes)
 
 
 @app.route("/map/<string:location>/<string:name>")
 def map_route(location, name):
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
     # Gets the id from the query in the url
     id = request.args.get("id")
 
-    # Executes a query to join the Route_Type bridging table, and uses the current routes id
-    cur.execute("""SELECT Route.name, Type.name, grade, bolts, Location.name, Route.id
+    # Get route details with types and locations
+    cur.execute("""SELECT Route.name, Type.name, grade, bolts,
+                Location.name, Route.id
                 FROM Route
                 JOIN Route_Type ON Route.id = Route_Type.route_id
                 JOIN Type ON Type.id = Route_Type.type_id
                 JOIN Location on Route.location_id = Location.id
                 WHERE Route.id = ?""", (id,))
-    
     results = cur.fetchall()
 
     # Adds all the base info to the info list
     info = []
     for result in results[0]:
         info.append(result)
-    
-    # Sets an empty list inside info, and then takes all the types across all rows of results, to append those to the list within the list
+    # Adds all types to the results info to display
     info[1] = []
     for type in results:
         info[1].append(type[1])
@@ -263,7 +280,7 @@ def add_route():
     has_errors = False
 
     current_url = request.form.get("url")
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
     # Sets all the field names for inserting and sets values
@@ -272,7 +289,7 @@ def add_route():
     values[0] = values[0].strip()
 
     # Validates name field, making sure its not null or too big
-    if len(values[0]) <= 0 or len(values[0]) > 100:
+    if len(values[0]) <= ZERO or len(values[0]) > MAX_NAME_LENGTH:
         has_errors = True
     else:
         # Ensures it is an original route name
@@ -280,20 +297,20 @@ def add_route():
         route_names = [row[0] for row in cur.fetchall()]
         if values[0] in route_names:
             has_errors = True
-    
+
     # Validates grade field, making sure its not null or too big
-    if len(values[1]) <= 0 or len(values[1]) > 10:
+    if len(values[1]) <= ZERO or len(values[1]) > MAX_GRADE_LENGTH:
         has_errors = True
 
-    # Validates bolts field, allowing it to be optional but a proper number and not too big
+    # Validates bolts field, it can be optional but a valid int and not too big
     if values[2] != "":
         if not values[2].isdigit():
             has_errors = True
         else:
             bolts = int(values[2])
-            if bolts < 0 or bolts > 1000:
+            if bolts < ZERO or bolts > MAX_BOLTS_VALUE:
                 has_errors = True
-    
+
     # Validates location name field, ensuring its not null and is pre-existing
     if not location_name:
         has_errors = True
@@ -321,8 +338,11 @@ def add_route():
         cur.execute("SELECT id FROM Location WHERE name = ?", (location_name,))
         location_id = cur.fetchone()[0]
 
-        # Will insert the values into the database using the given field names and values
-        cur.execute(f"INSERT INTO Route ({', '.join(fields)}, location_id, pending) VALUES({', '.join('?' * len(fields))}, ?, 1)", values + [location_id])
+        # Inserts values into the database
+        cur.execute(
+            f"""INSERT INTO Route ({', '.join(fields)}, location_id, pending)
+                VALUES({', '.join('?' * len(fields))}, ?, 1)""",
+            values + [location_id])
         con.commit()
 
         # Gets the new routes id
@@ -330,7 +350,8 @@ def add_route():
         route_id = cur.fetchone()[0]
 
         for type in types:
-            cur.execute("INSERT INTO Route_Type (route_id, type_id) VALUES(?, ?)", (route_id, int(type)))
+            cur.execute("""INSERT INTO Route_Type (route_id, type_id)
+                        VALUES(?, ?)""", (route_id, int(type)))
 
         con.commit()
         con.close()
@@ -342,7 +363,7 @@ def add_route():
 
 @app.route("/map/add-location", methods=["GET", "POST"])
 def add_location():
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
     has_errors = False
 
@@ -352,7 +373,7 @@ def add_location():
     setting_id = request.form.get("setting")
 
     # Validates name field, making sure its not null or too big
-    if len(name) <= 0 or len(name) > 100:
+    if len(name) <= ZERO or len(name) > MAX_NAME_LENGTH:
         has_errors = True
 
     # Validates lat and lon, ensuring they are the correct type
@@ -360,11 +381,11 @@ def add_location():
         latF = float(lat)
         lonF = float(lon)
         # Validates that they are a valid coordinate
-        if not (-90 <= latF <= 90 and -180 <= lonF <= 180):
+        if not (MIN_LAT <= latF <= MAX_LAT and MIN_LON <= lonF <= MAX_LON):
             has_errors = True
     except (ValueError, TypeError):
         has_errors = True
-    
+
     # Validates that the setting id is a digit
     if setting_id.isdigit():
         cur.execute("SELECT id FROM Setting;")
@@ -383,13 +404,15 @@ def add_location():
             saved_filename = photos.save(image_file)
             file_url = url_for("get_file", filename=saved_filename)
         except UploadNotAllowed:
-            has_errors= True
+            has_errors = True
 
     # Inserts route if no errors are present
     if not has_errors:
         coordinates = f"{request.form.get('lat')} {request.form.get('lon')}"
-        cur.execute("INSERT INTO Location (name, coordinates, setting_id, image, pending) VALUES(?, ?, ?, ?, 1)", (name, coordinates, setting_id, file_url,))
-        
+        cur.execute("""INSERT INTO Location 
+                    (name, coordinates, setting_id, image, pending)
+                    VALUES(?, ?, ?, ?, 1)""",
+                    (name, coordinates, setting_id, file_url,))
         con.commit()
         con.close()
         flash("Your location is now pending approval", "info")
@@ -408,7 +431,7 @@ def log_route():
     date = request.form.get("local_date")
     errors = {}
     
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
     # Gets all routes ids 
@@ -470,7 +493,7 @@ def events():
 
 @app.route("/events/<string:event_slug>", methods=["GET", "POST"])
 def event(event_slug):
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     con.row_factory = sqlite3.Row
     cur = con.cursor()
 
@@ -543,7 +566,7 @@ def event(event_slug):
 
         # If there are no errors then the data will be inserted       
         if not errors:
-            con = sqlite3.connect("climbing.db")
+            con = sqlite3.connect(DB_NAME)
             cur = con.cursor()
             
             # Inserts each result iteratively
@@ -559,7 +582,7 @@ def event(event_slug):
             flash("Results added!", "success")
             return redirect(url_for("event", event_slug=event_slug, id=event_id))
 
-    # Gets all the events info
+    # Gets all the events info joining account table to display user
     cur.execute("""SELECT Event.id, Event.name, post_date, start_date, end_date, Event.description, Event.full_description,
                 location, Account.display_name AS name, start_time, end_time, Event.pending, Event.image, 
                 Account.id AS host_id
@@ -622,7 +645,7 @@ def event_action():
     if not account_id:
         return jsonify({"status": "login"}) # Passes the json to login if account id isn't found
     
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
     if action == "join":
@@ -646,7 +669,7 @@ def event_action():
 
 
 def get_events(pending):
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     con.row_factory = sqlite3.Row # Returns results as a dictionary to be accessed easier for me
 
     cur = con.cursor()
@@ -692,7 +715,9 @@ def add_event():
     # Will validate and insert the event
     if request.method == "POST":
         # Gets the fields and values from the form and turns them into a dict
-        fields = ["name", "start_date", "end_date", "start_time", "end_time", "location", "description", "full_description", "post_date", "account_id"]
+        fields = ["name", "start_date", "end_date", "start_time", 
+                  "end_time", "location", "description", 
+                  "full_description", "post_date", "account_id"]
         values = {field: request.form.get(field) for field in fields}
 
         # Validates name input
@@ -743,8 +768,8 @@ def add_event():
 
         # Validates full description input
         if values["full_description"]:
-            if len(values["full_description"]) < 100 or len(values["full_description"]) > 1000:
-                errors["full_description"] = "Full description must be between 100 and 1000 characters"
+            if len(values["full_description"]) < 100 or len(values["full_description"]) > 10000:
+                errors["full_description"] = "Full description must be between 100 and 10000 characters"
         else:
             errors["full_description"] = "Full description required"
         
@@ -780,7 +805,7 @@ def add_event():
                 errors["image"] = "Invalid image file type"
         
         if errors == {}:
-            con = sqlite3.connect("climbing.db")
+            con = sqlite3.connect(DB_NAME)
             cur = con.cursor()
             cur.execute(f"""INSERT INTO Event ({' ,'.join(field for field in values)}, image, pending) 
                         VALUES({', '.join('?' * len(fields))}, ?, 1)""",
@@ -795,7 +820,7 @@ def add_event():
 
 
 def get_results(id):
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     con.row_factory = sqlite3.Row
     cur = con.cursor()
 
@@ -880,7 +905,7 @@ def placing_suffix(placing):
 
 @app.route("/admin")
 def admin():
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
     cur.execute("""SELECT Route.id, Route.name, Location.name, GROUP_CONCAT(Type.name, ', '), Route.grade, Route.bolts FROM Route 
@@ -944,7 +969,7 @@ def account():
         routes = get_logged_routes()
         events = get_joined_events()
 
-        con = sqlite3.connect("climbing.db")
+        con = sqlite3.connect(DB_NAME)
         con.row_factory = sqlite3.Row
         cur = con.cursor()
 
@@ -986,7 +1011,7 @@ def account():
 
 
 def get_logged_routes():
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
     # Gets the logged routes info for the current account
@@ -1002,7 +1027,7 @@ def get_logged_routes():
 
 
 def get_joined_events():
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     con.row_factory = sqlite3.Row # Turns the results into a table for easier access of values
     cur = con.cursor()
     
@@ -1076,7 +1101,7 @@ def edit_account():
                     else:
                         file_url = request.form.get("current_profile") # Set pfp to the current if unchanged
 
-                    con = sqlite3.connect("climbing.db")
+                    con = sqlite3.connect(DB_NAME)
                     cur = con.cursor()
 
                     # Updates account info
@@ -1104,7 +1129,7 @@ def profanity_check(text):
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    con = sqlite3.connect("climbing.db")
+    con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
     
     wtf_form = RegisterForm()
@@ -1153,7 +1178,7 @@ def login():
         username = request.form.get("username")
         password = request.form.get("password") 
 
-        con = sqlite3.connect("climbing.db")
+        con = sqlite3.connect(DB_NAME)
         cur = con.cursor()
         cur.execute("SELECT id, password FROM Account WHERE username = ?;", (username,))
         result = cur.fetchone()
