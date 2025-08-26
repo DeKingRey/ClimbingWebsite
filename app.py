@@ -21,11 +21,15 @@ from wtforms.validators import (
 from wtforms import StringField, PasswordField, SubmitField
 
 from slugify import slugify
+from collections import defaultdict
 
 from banned_words import BANNED_WORDS
 from config import (
     DB_NAME, ZERO, MAX_NAME_LENGTH, MAX_GRADE_LENGTH, MAX_BOLTS_VALUE,
-    MIN_LAT, MAX_LAT, MIN_LON, MAX_LON
+    MIN_LAT, MAX_LAT, MIN_LON, MAX_LON, MIN_RATING_VALUE, MAX_RATING_VALUE,
+    MIN_EVENT_NAME_LENGTH, MIN_LOCATION_NAME_LENGTH,
+    MIN_DESC_LENGTH, MAX_DESC_LENGTH, MIN_FULL_DESC_LENGTH,
+    MAX_FULL_DESC_LENGTH
 )
 
 load_dotenv()
@@ -320,7 +324,7 @@ def add_route():
         if location_name not in location_names:
             has_errors = True
 
-    # Validates types field, ensuring its not null and that the types exist 
+    # Validates types field, ensuring its not null and that the types exist
     if types == []:
         has_errors = True
     else:
@@ -409,7 +413,7 @@ def add_location():
     # Inserts route if no errors are present
     if not has_errors:
         coordinates = f"{request.form.get('lat')} {request.form.get('lon')}"
-        cur.execute("""INSERT INTO Location 
+        cur.execute("""INSERT INTO Location
                     (name, coordinates, setting_id, image, pending)
                     VALUES(?, ?, ?, ?, 1)""",
                     (name, coordinates, setting_id, file_url,))
@@ -417,8 +421,8 @@ def add_location():
         con.close()
         flash("Your location is now pending approval", "info")
     else:
-        flash("Invalid Form Submission", "error")\
-        
+        flash("Invalid Form Submission", "error")
+
     return redirect(url_for("climbing_map"))
 
 
@@ -430,11 +434,11 @@ def log_route():
     rating = request.form.get("rating")
     date = request.form.get("local_date")
     errors = {}
-    
+
     con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
-    # Gets all routes ids 
+    # Gets all routes ids
     cur.execute("SELECT id FROM Route")
     results = cur.fetchall()
     route_ids = [str(id[0]) for id in results]
@@ -445,11 +449,11 @@ def log_route():
 
     # Validates that the rating is between 1-5 and is an int
     try:
-        if int(rating) < 1 or int(rating) > 5:
+        if int(rating) < MIN_RATING_VALUE or int(rating) > MAX_RATING_VALUE:
             errors["rating"] = "Rating must be between 1 and 5"
     except ValueError:
         errors["rating"] = "Rating must be a number"
-    
+
     # Validates log date
     if date:
         try:
@@ -465,15 +469,21 @@ def log_route():
         errors.setdefault("other", []).append("Log date required")
 
     if not errors:
-        cur.execute("SELECT 1 FROM Account_Route WHERE account_id = ? AND route_id = ?;", (user_id, route_id,))
+        cur.execute("""SELECT 1 FROM Account_Route
+                    WHERE account_id = ? AND route_id = ?;""",
+                    (user_id, route_id,))
         existing_entry = cur.fetchone()
 
-        # Checks if the user has already logged, if so update info, if not insert it
+        # Update rating if entry exists, otherwise insert a new entry
         if existing_entry:
-            cur.execute("UPDATE Account_Route SET rating = ?, date = ? WHERE account_id = ? AND route_id = ?;", 
+            cur.execute("""UPDATE Account_Route SET rating = ?, date = ?
+                        WHERE account_id = ? AND route_id = ?;""",
                         (rating, date, user_id, route_id,))
         else:
-            cur.execute("INSERT INTO Account_Route (account_id, route_id, rating, date) VALUES (?, ?, ?, ?)", (user_id, route_id, rating, date,))
+            cur.execute("""INSERT INTO Account_Route
+                        (account_id, route_id, rating, date)
+                        VALUES (?, ?, ?, ?)""",
+                        (user_id, route_id, rating, date,))
 
         con.commit()
         con.close()
@@ -504,7 +514,7 @@ def event(event_slug):
 
     # Will validate and publish results to database
     if request.method == "POST":
-        errors = {}
+        errors = defaultdict(list)
         submitted_results = []
         # Gets the ID's that have joined the event to validate later
         valid_info = get_results(event_id)
@@ -515,42 +525,43 @@ def event(event_slug):
         time_required = False
 
         i = 1
-        # Loops through all published result entries validating inputs then adding them
+        # Loops through partipants, validate input times, and format them
         for i in range(1, num_participants + 1):
             account_id = request.form.get(f"account_id_{i}")
             time_mins = request.form.get(f"time_mins_{i}")
             time_secs = request.form.get(f"time_secs_{i}")
 
             time = None
+            time_key = f"time_{i}"
 
             # Validates time inputs
             if time_mins or time_secs:
                 time_required = True
                 if not time_mins or not time_secs:
-                    errors.setdefault(f"time_{i}", []).append("Both minutes and seconds are required")
+                    errors[time_key].append("Minutes and seconds are required")
                 # Ensures time inputs are a number
                 elif not time_mins.isnumeric() or not time_secs.isnumeric():
-                    errors.setdefault(f"time_{i}", []).append("Time must be numeric and non negative") 
+                    errors[time_key].append("Time must be non-negative number")
                 else:
                     # Ensures time inputs aren't too long or negative
                     mins = int(time_mins)
                     secs = int(time_secs)
                     if not (0 <= mins <= 100) or not (0 <= secs <= 59):
-                        errors.setdefault(f"time_{i}", []).append("Time must be a valid input")
+                        errors[time_key].append("Time must be a valid input")
                     else:
                         # Forms the time string if both inputs are gotten
                         time = f"{time_mins}:{secs:02d}mins"
 
             # Only validates results for a valid participant
-            if  account_id:    
+            if account_id:
                 # Prevents altering account_id value to an ID not in the event
                 if account_id not in valid_ids:
                     errors[f"account_id_{i}"] = "Invalid participant ID"
 
                 # If time is inputted anywhere but not provided in one spot
-                if time_required and not time: 
-                    errors.setdefault(f"time_{i}", []).append("Time must be filled in if provided anywhere")
-                
+                if time_required and not time:
+                    errors[time_key].append("All time inputs are required")
+
                 # Appends a dict of the results
                 submitted_results.append({
                     "account_id": int(account_id),
@@ -564,45 +575,55 @@ def event(event_slug):
         if any(key.startswith("time_") for key in errors):
             errors["has_time_errors"] = True
 
-        # If there are no errors then the data will be inserted       
+        # If there are no errors then the data will be inserted
         if not errors:
             con = sqlite3.connect(DB_NAME)
             cur = con.cursor()
-            
+
             # Inserts each result iteratively
             for result in submitted_results:
                 if time_required:
-                    cur.execute("UPDATE Account_Event SET placing = ?, TIME = ? WHERE account_id = ? AND event_id = ?;", 
-                                (result["placing"], result["time"], result["account_id"], event_id))
-                else: # If time is not inputted 
-                    cur.execute("UPDATE Account_Event SET placing = ?WHERE account_id = ? AND event_id = ?;",
-                                (result["placing"], result["account_id"], event_id))
+                    cur.execute("""UPDATE Account_Event
+                                SET placing = ?, time = ?
+                                WHERE account_id = ? AND event_id = ?;""",
+                                (result["placing"], result["time"],
+                                 result["account_id"], event_id))
+                else:  # If time is not inputted
+                    cur.execute("""UPDATE Account_Event SET placing = ?
+                                WHERE account_id = ? AND event_id = ?;""",
+                                (result["placing"],
+                                 result["account_id"], event_id))
             con.commit()
             con.close()
             flash("Results added!", "success")
-            return redirect(url_for("event", event_slug=event_slug, id=event_id))
+            return redirect(url_for("event", event_slug=event_slug,
+                                    id=event_id))
 
-    # Gets all the events info joining account table to display user
-    cur.execute("""SELECT Event.id, Event.name, post_date, start_date, end_date, Event.description, Event.full_description,
-                location, Account.display_name AS name, start_time, end_time, Event.pending, Event.image, 
+    # Gets event info, joins account to display who made the event
+    cur.execute("""SELECT Event.id, Event.name, post_date, start_date,
+                end_date, Event.description, Event.full_description,
+                location, Account.display_name AS name, start_time, end_time,
+                Event.pending, Event.image,
                 Account.id AS host_id
                 FROM Event
                 JOIN Account ON Event.account_id = Account.id
                 WHERE Event.pending = 0 AND Event.id == ?;""", (event_id,))
     event_data = cur.fetchone()
-    
+
     # Will be used to find whether the user has joined the event
-    cur.execute("SELECT event_id FROM Account_Event WHERE account_id = ? AND event_id = ?;", (session.get("user_id"), event_id,))
+    cur.execute("""SELECT event_id FROM Account_Event
+                WHERE account_id = ? AND event_id = ?;""",
+                (session.get("user_id"), event_id,))
     joined = cur.fetchone()
 
-    event_dict = dict(event_data) # Turns event into a dict
+    event_dict = dict(event_data)  # Turns event into a dict
 
-    # Sets the joined bool to determine whether the event is joined by the user or not
+    # Sets whether the event is joined by the user or not
     event_dict["joined"] = joined is not None
 
     event_dict["slug"] = event_slug
 
-    status = event_status(event_dict) # Gets the status of the event
+    status = event_status(event_dict)  # Gets the status of the event
     results = dict()
     participants = dict()
     no_results = False
@@ -617,18 +638,18 @@ def event(event_slug):
             if results_data[0].get("placing"):
                 results = results_data
             else:
-                participants = results_data # Will be used in the publish results form
+                participants = results_data  # Will be used in the results form
         else:
             no_results = True
-    
+
     con.close()
 
     return render_template(
-        "event.html", 
-        event=event_dict, 
-        results=results, 
-        participants=participants, 
-        no_results=no_results, 
+        "event.html",
+        event=event_dict,
+        results=results,
+        participants=participants,
+        no_results=no_results,
         errors=errors,
         submitted_results=submitted_results
     )
@@ -638,69 +659,76 @@ def event(event_slug):
 def event_action():
     # This will handle the functionality of the buttons on each event
 
-    action = request.form.get("action") # Gets the buttons action
+    action = request.form.get("action")  # Gets the buttons action
     account_id = session.get("user_id")
     event_id = request.form.get("event_id")
 
     if not account_id:
-        return jsonify({"status": "login"}) # Passes the json to login if account id isn't found
-    
+        return jsonify({"status": "login"})  # Return JSON instructing login
+
     con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
     if action == "join":
         try:
             # Inserts the values into the account_event bridging table
-            cur.execute("INSERT INTO Account_Event (account_id, event_id) VALUES (?, ?)", (account_id, event_id,))
+            cur.execute("""INSERT INTO Account_Event (account_id, event_id)
+                        VALUES (?, ?)""", (account_id, event_id,))
             con.commit()
             status = "joined"
-        except sqlite3.IntegrityError: # In case the user has already joined the event
+        except sqlite3.IntegrityError:  # If the user has joined the event
             pass
     elif action == "leave":
         # Deletes the user from the event they joined
-        cur.execute("DELETE FROM Account_Event WHERE account_id = ? AND event_id = ?;", (account_id, event_id,))
+        cur.execute("""DELETE FROM Account_Event
+                    WHERE account_id = ? AND event_id = ?;""",
+                    (account_id, event_id,))
         con.commit()
         status = "left"
     else:
-        status = "error" # Error if anything else
+        status = "error"  # Error if anything else
 
     con.close()
-    return jsonify({"status": status}) # Returns the status for JS
+    return jsonify({"status": status})  # Returns the status for JS
 
 
 def get_events(pending):
     con = sqlite3.connect(DB_NAME)
-    con.row_factory = sqlite3.Row # Returns results as a dictionary to be accessed easier for me
+    con.row_factory = sqlite3.Row  # Results become a dict for easy access
 
     cur = con.cursor()
-    # Gets all events info
-    cur.execute("""SELECT Event.id, Event.name, post_date, start_date, end_date, Event.description, 
-                location, Account.display_name, start_time, end_time, Event.pending, Event.image
+    # Gets event details, joining account to display who made the event
+    cur.execute("""SELECT Event.id, Event.name, post_date, start_date,
+                end_date, Event.description, location, Account.display_name,
+                start_time, end_time, Event.pending, Event.image
                 FROM Event
                 JOIN Account ON Event.account_id = Account.id
                 WHERE Event.pending = ?;""", (pending,))
     events = cur.fetchall()
 
-    # Converts the events sql dict into a python array of dicts so I can add values
+    # Convert SQL rows to Python dicts for modification
     events = [dict(event) for event in events]
 
-    # The joined events will be organised and ordered if the event isn't pending
-    if pending == 0:
-        # Sets joined events to none as it will only be needed if the user is logged in
+    # Only organise joined events if not pending
+    if pending == ZERO:
+        # Initialise joined events for logged in users
         joined_events_ids = set()
         if session.get("user_id"):
-            user_id = session.get("user_id")      
+            user_id = session.get("user_id")
 
             # Gets every event the user has joined and adds their ids to a set
-            cur.execute("SELECT event_id FROM Account_Event WHERE account_id = ?;", (user_id,))
+            cur.execute("""SELECT event_id FROM Account_Event
+                        WHERE account_id = ?;""", (user_id,))
             joined_events_ids = {row["event_id"] for row in cur.fetchall()}
 
-        # Adds joined events keys to the events dict 
+        # Adds joined events keys to the events dict
         for event in events:
             event["joined"] = event["id"] in joined_events_ids
-            event["slug"] = slugify(event["name"]) # Creates a slug for the event so the name can be properly used in a link
-        
-        # Sorts by status: Ongoing joined > Ongoing > Upcoming joined > Upcoming > Concluded, then by nearest time(start or end)
+            event["slug"] = slugify(event["name"])  # Creates a slug for links
+
+        # Sort by status:
+        # Ongoing joined > Ongoing > Upcoming joined > Upcoming > Concluded
+        # Then by nearest start/end time
         events.sort(key=sort_events)
 
     con.close()
@@ -710,39 +738,49 @@ def get_events(pending):
 @app.route("/events/add-event", methods=["GET", "POST"])
 def add_event():
     locations = get_locations()
-    errors = {}
+    errors = defaultdict(list)
 
     # Will validate and insert the event
     if request.method == "POST":
         # Gets the fields and values from the form and turns them into a dict
-        fields = ["name", "start_date", "end_date", "start_time", 
-                  "end_time", "location", "description", 
+        fields = ["name", "start_date", "end_date", "start_time",
+                  "end_time", "location", "description",
                   "full_description", "post_date", "account_id"]
         values = {field: request.form.get(field) for field in fields}
 
         # Validates name input
         if values["name"]:
-            if len(values["name"]) < 3 or len(values["name"]) > 100:
-                errors["name"] = "Event title must be between 3 and 100 characters"
+            if (
+                len(values["name"]) < MIN_EVENT_NAME_LENGTH
+                or len(values["name"]) > MAX_NAME_LENGTH
+            ):
+                errors["name"] = "Event title must be between 3 and 100 chars"
         else:
             errors["name"] = "Event title required"
-        
+
         # Validates date and time inputs
-        if all(values.get(key) for key in ["start_date", "end_date", "start_time", "end_time"]):
+        if all(
+            values.get(key)
+            for key in ["start_date", "end_date", "start_time", "end_time"]
+        ):
             try:
-                # Gets values which will be used to validate the inputted datetime
-                start_value = datetime.strptime(f"{values['start_date']} {values['start_time']}", "%Y-%m-%d %H:%M")
-                end_value = datetime.strptime(f"{values['end_date']} {values['end_time']}", "%Y-%m-%d %H:%M")
+                # Gets values to validate datetimes
+                start_value = datetime.strptime(f"""{values['start_date']}
+                                                    {values['start_time']}""",
+                                                "%Y-%m-%d %H:%M")
+                end_value = datetime.strptime(f"""{values['end_date']}
+                                                  {values['end_time']}""",
+                                              "%Y-%m-%d %H:%M")
                 now = datetime.now()
 
-                # Makes sure datetimes are in the future and correctly ordered 
+                # Makes sure datetimes are in the future and correctly ordered
                 if start_value < now or end_value < now:
                     errors["datetime"] = "Date and time must be in the future"
                 elif start_value > end_value:
-                    errors["datetime"] = "Start datetime must be before end datetime"
+                    errors["datetime"] = "Start datetime must be before end"
 
                 # Converts date and times into a readable format
-                values["start_date"] = start_value.strftime("%d-%m-%Y") 
+                values["start_date"] = start_value.strftime("%d-%m-%Y")
                 values["end_date"] = end_value.strftime("%d-%m-%Y")
                 values["start_time"] = start_value.strftime("%I:%M%p").lower()
                 values["end_time"] = end_value.strftime("%I:%M%p").lower()
@@ -754,25 +792,34 @@ def add_event():
 
         # Validates location name input
         if values["location"]:
-            if len(values["location"]) < 3 or len(values["location"]) > 100:
-                errors["location"] = "Location name must be between 3 and 100 characters"
+            if (
+                len(values["location"]) < MIN_LOCATION_NAME_LENGTH
+                or len(values["location"]) > MAX_NAME_LENGTH
+            ):
+                errors["location"] = "Location name len must be between 3-100"
         else:
             errors["location"] = "Location name required"
 
         # Validates brief description input
         if values["description"]:
-            if len(values["description"]) < 50 or len(values["description"]) > 250:
-                errors["description"] = "Brief description must be between 50 and 250 characters"
+            if (
+                len(values["description"]) < MIN_DESC_LENGTH
+                or len(values["description"]) > MAX_DESC_LENGTH
+            ):
+                errors["description"] = "Brief desc len be between 50-250"
         else:
             errors["description"] = "Brief description required"
 
         # Validates full description input
         if values["full_description"]:
-            if len(values["full_description"]) < 100 or len(values["full_description"]) > 10000:
-                errors["full_description"] = "Full description must be between 100 and 10000 characters"
+            if (
+                len(values["full_description"]) < MIN_FULL_DESC_LENGTH
+                or len(values["full_description"]) > MAX_FULL_DESC_LENGTH
+            ):
+                errors["full_description"] = "Full desc len must be 100-10000"
         else:
             errors["full_description"] = "Full description required"
-        
+
         # Validates post date
         if values["post_date"]:
             try:
@@ -781,11 +828,11 @@ def add_event():
 
                 # Makes sure it is the current date
                 if post_date.date() != today.date():
-                    errors.setdefault("other", []).append("Post date must be today")
+                    errors["other"].append("Post date must be today")
             except ValueError:
                 "Invalid post date format"
         else:
-            errors.setdefault("other", []).append("Post date required")
+            errors["other"].append("Post date required")
 
         # Validates that account id is the current users id
         if values["account_id"] != str(session.get("user_id")):
@@ -803,11 +850,13 @@ def add_event():
                 file_url = url_for("get_file", filename=saved_filename)
             except UploadNotAllowed:
                 errors["image"] = "Invalid image file type"
-        
+
         if errors == {}:
             con = sqlite3.connect(DB_NAME)
             cur = con.cursor()
-            cur.execute(f"""INSERT INTO Event ({' ,'.join(field for field in values)}, image, pending) 
+            cur.execute(f"""INSERT INTO Event
+                        ({' ,'.join(field for field in values)},
+                        image, pending)
                         VALUES({', '.join('?' * len(fields))}, ?, 1)""",
                         tuple(values[value] for value in values) + (file_url,))
 
@@ -816,7 +865,8 @@ def add_event():
 
             flash("Your event is now pending approval", "info")
             return redirect(url_for("events"))
-    return render_template("add-event.html", header="Events", locations=locations, errors=errors)
+    return render_template("add-event.html", header="Events",
+                           locations=locations, errors=errors)
 
 
 def get_results(id):
@@ -824,15 +874,17 @@ def get_results(id):
     con.row_factory = sqlite3.Row
     cur = con.cursor()
 
-    cur.execute("""SELECT ae.placing, a.display_name AS name, a.username, ae.time, a.id
+    # Gets all participants results for the specific event
+    cur.execute("""SELECT ae.placing, a.display_name AS name,
+            a.username, ae.time, a.id
             FROM Account_Event ae
             JOIN Account a ON ae.account_id = a.id
             WHERE ae.event_id = ?;""", (id,))
     data = cur.fetchall()
     data_dict = [dict(info) for info in data]
-    
+
     results = dict()
-    # If the results are available order and suffix the placings for table visibility
+    # Orders and suffixes the placings for table readability if possible
     if data_dict:
         if data_dict[0].get("placing"):
             results = sorted(data_dict, key=lambda item: item["placing"])
@@ -840,59 +892,59 @@ def get_results(id):
             for result in results:
                 result["placing"] = placing_suffix(result["placing"])
             return results
-    return data_dict # Either list of participants, or None(if no participants)
+    return data_dict  # Either list of participants or None(if no participants)
 
 
 def parse_datetime(date, time):
-    day, month, year = map(int, date.split("-")) # Separates day time and month
-    hour, minute = map(int, time[:-2].split(":")) # Separates hours and minutes, ignoring the meridian for now
-    ampm = time[-2:]    
+    day, month, year = map(int, date.split("-"))  # Gets day, month, and year
+    hour, minute = map(int, time[:-2].split(":"))  # Gets hours and mins
+    ampm = time[-2:]
 
     # Following if statements convert the hours into 24hr time 
-    if ampm == "pm" and hour != 12: # Add 12 hours if its pm and not 12pm
+    if ampm == "pm" and hour != 12:  # Add 12 hours if its pm and not 12pm
         hour += 12
-    if ampm == "am" and hour == 12: # If it's midnight
+    if ampm == "am" and hour == 12:  # If it's midnight
         hour = 0
-    
-    return datetime(year, month, day, hour, minute) # Converts into a python datetime
+
+    return datetime(year, month, day, hour, minute)  # Converts to py datetime
 
 
 def event_status(event):
-    now = datetime.now() # Gets current time
+    now = datetime.now()  # Gets current time
     start = parse_datetime(event["start_date"], event["start_time"])
     end = parse_datetime(event["end_date"], event["end_time"])
 
     # Gets the events status
-    if start <= now <= end: # If the event has started but not ended
+    if start <= now <= end:  # If the event has started but not ended
         if (event["joined"]):
-            return 0 # Ongoing joined
+            return 0  # Ongoing joined
         else:
-            return 1 # Ongoing not joined
+            return 1  # Ongoing not joined
     elif now < start:
         if (event["joined"]):
-            return 2 # Upcoming joined
+            return 2  # Upcoming joined
         else:
-            return 3 # Upcoming not joined
+            return 3  # Upcoming not joined
     else:
-        return 4 # Concluded
+        return 4  # Concluded
 
 
 def sort_events(event):
     # Will sort events status by how soon they are starting/ending
     status = event_status(event)
-    if status <= 1 or status == 4: # Ongoing or concluded events are sorted by when they will/have ended
+
+    if status <= 1 or status == 4:  # Sorts ongoing/concluded by endtime
         sort_time = parse_datetime(event["end_date"], event["end_time"])
-    else: # Upcoming events are sorted by when they start
+    else:  # Upcoming events are sorted by when they start
         sort_time = parse_datetime(event["start_date"], event["start_time"])
 
-    print(f"Event: {event['name']} | Status: {status} | Sort Time: {sort_time}")
-    return(status, sort_time.timestamp())
+    return (status, sort_time.timestamp())
 
 
 def placing_suffix(placing):
-    if 11 <= placing <= 13: # 11-13 are different to other numbers as they have a th suffix instead of other 1's, 2's, and 3's
+    if 11 <= placing <= 13:  # Adds th suffix for numbers 11-13
         suffix = "th"
-    elif placing % 10 == 1: # Checks if the remainder of the plaing % 10 is 1, e.g. 10 fits into 21 twice, 21-20 = 1
+    elif placing % 10 == 1:  # Checks if the remainder of the placing % 10 is 1
         suffix = "st"
     elif placing % 10 == 2:
         suffix = "nd"
@@ -900,7 +952,7 @@ def placing_suffix(placing):
         suffix = "rd"
     else:
         suffix = "th"
-    return str(f"{placing}{suffix}") # Updates the event placing
+    return str(f"{placing}{suffix}")  # Updates the event placing
 
 
 @app.route("/admin")
