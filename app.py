@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 from flask import (
     Flask, render_template, redirect, url_for,
-    send_from_directory, request, session, jsonify, flash
+    send_from_directory, request, session, jsonify, flash, abort
 )
 from flask_bcrypt import Bcrypt, check_password_hash
 from flask_uploads import (
@@ -29,7 +29,7 @@ from config import (
     MIN_LAT, MAX_LAT, MIN_LON, MAX_LON, MIN_RATING_VALUE, MAX_RATING_VALUE,
     MIN_EVENT_NAME_LENGTH, MIN_LOCATION_NAME_LENGTH,
     MIN_DESC_LENGTH, MAX_DESC_LENGTH, MIN_FULL_DESC_LENGTH,
-    MAX_FULL_DESC_LENGTH
+    MAX_FULL_DESC_LENGTH, MIN_USERNAME_LENGTH, MAX_USERNAME_LENGTH
 )
 
 load_dotenv()
@@ -58,10 +58,10 @@ class RegisterForm(FlaskForm):
     name = StringField("Name", validators=[
                             DataRequired("Field should not be empty"),
                             NoneOf(BANNED_WORDS,
-                                   message="Please avoid using inappropriate language"),
+                                   message="Username is not allowed"),
                             Length(min=3, max=20,
-                                   message="Username must be between 3 and 20 characters long"),
-                            NoSpaces(message="Username must not contain spaces")
+                                   message="Username must be 3-20 characters"),
+                            NoSpaces(message="Username mustn't contain spaces")
                         ])
     # Creates password field which has to be a min of 8 characters and inputted
     password = PasswordField("Password", validators=[
@@ -220,6 +220,15 @@ def map_location(name):
     con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
+    cur.execute("SELECT id FROM Location;")
+    valid_ids = [result[0] for result in cur.fetchall()]
+
+    # Aborts if id is null, isn't a valid int, or is not a valid id
+    if not id or not id.isdigit():
+        abort(404)
+    elif int(id) not in valid_ids:
+        abort(404)
+
     routes = get_routes()
 
     # Gets location info, joining route table to include the locations routes
@@ -254,6 +263,15 @@ def map_route(location, name):
 
     # Gets the id from the query in the url
     id = request.args.get("id")
+
+    cur.execute("SELECT id FROM Route;")
+    valid_ids = [result[0] for result in cur.fetchall()]
+
+    # Aborts if id is null, isn't a valid int, or is not a valid id
+    if not id or not id.isdigit():
+        abort(404)
+    elif int(id) not in valid_ids:
+        abort(404)
 
     # Get route details with types and locations
     cur.execute("""SELECT Route.name, Type.name, grade, bolts,
@@ -508,6 +526,15 @@ def event(event_slug):
     cur = con.cursor()
 
     event_id = request.args.get("id")
+
+    cur.execute("SELECT id FROM Event;")
+    valid_ids = [result[0] for result in cur.fetchall()]
+
+    # Aborts if id is null, isn't a valid int, or is not a valid id
+    if not event_id or not event_id.isdigit():
+        abort(404)
+    elif int(event_id) not in valid_ids:
+        abort(404)
 
     errors = {}
     submitted_results = []
@@ -871,7 +898,7 @@ def add_event():
 
 def get_results(id):
     con = sqlite3.connect(DB_NAME)
-    con.row_factory = sqlite3.Row
+    con.row_factory = sqlite3.Row  # Results become a dict for easy access
     cur = con.cursor()
 
     # Gets all participants results for the specific event
@@ -960,22 +987,27 @@ def admin():
     con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
-    cur.execute("""SELECT Route.id, Route.name, Location.name, GROUP_CONCAT(Type.name, ', '), Route.grade, Route.bolts FROM Route 
+    # Get all pending routes and types as strings includes routes with no types
+    cur.execute("""SELECT Route.id, Route.name, Location.name,
+                GROUP_CONCAT(Type.name, ', '), Route.grade, Route.bolts
+                FROM Route
                 LEFT JOIN Location ON Route.location_id = Location.id
                 LEFT JOIN Route_Type ON Route.id = Route_Type.route_id
                 LEFT JOIN Type ON Type.id = Route_Type.type_id
                 WHERE Route.pending = 1
                 GROUP BY Route.id;""")
-    
-    routes = cur.fetchall() # Gets all pending routes and their information
 
-    cur.execute("""SELECT Location.id, Location.name, Location.coordinates, Setting.name, Location.image FROM Location
+    routes = cur.fetchall()
+
+    # Gets all pending locations, with their location setting
+    cur.execute("""SELECT Location.id, Location.name, Location.coordinates,
+                Setting.name, Location.image FROM Location
                 JOIN Setting ON Location.setting_id = Setting.id
                 WHERE Location.pending = 1;""")
-    
-    results = cur.fetchall() # Gets all pending locations and their information
 
-    # Loops through results and properly formats the coordinates for google map links and then appends the new row to the locations array
+    results = cur.fetchall()
+
+    # Format coordinates for google maps and appends all results to locations
     locations = []
     for result in results:
         coords = result[2].replace(" ", ",")
@@ -987,7 +1019,8 @@ def admin():
 
     con.close()
 
-    return render_template("admin.html", header="Admin", routes=routes, locations=locations, events=events)
+    return render_template("admin.html", header="Admin", routes=routes,
+                           locations=locations, events=events)
 
 
 @app.route("/process-submission", methods=["GET", "POST"])
@@ -996,19 +1029,24 @@ def process_submissions():
     cur = con.cursor()
 
     id = request.form.get("id") 
-    type = request.form.get("type") # Used to identify which table to alter
-    action = request.form.get("action") # Either approve or deny
+    type = request.form.get("type")  # Used to identify which table to alter
+    action = request.form.get("action")  # Either approve or deny
 
     if action == "approve":
-        cur.execute(f"UPDATE {type} SET pending = 0 WHERE id = ?;", (id,))  # Sets pending to false, approving the submission
+        cur.execute(f"""UPDATE {type} SET pending = 0
+                    WHERE id = ?;""",
+                    (id,))  # Sets pending to false, approving the submission
     else:
-        cur.execute(f"DELETE FROM {type} WHERE id = ?;", (id,)) # Removes the submission
+        cur.execute(f"""DELETE FROM {type}
+                    WHERE id = ?;""", (id,))  # Removes the submission
         if type == "Route":
-            cur.execute(f"DELETE FROM Route_Type WHERE route_id = ?;", (id,)) # Deletes the routes types if it is a route
+            cur.execute("""DELETE FROM Route_Type
+                        WHERE route_id = ?;""",
+                        (id,))  # Deletes the routes types if it is a route
 
     con.commit()
     con.close()
-    
+
     return redirect(url_for('admin'))
 
 
@@ -1017,7 +1055,7 @@ def account():
     routes = None
     events = None
     submissions = {}
-    if session.get("user_id"): # Makes sure the user is logged in
+    if session.get("user_id"):  # Makes sure the user is logged in
         routes = get_logged_routes()
         events = get_joined_events()
 
@@ -1026,7 +1064,7 @@ def account():
         cur = con.cursor()
 
         user_id = session.get("user_id")
-        # Gets all routes/locations/events that are pending and made by the user, also adds a type column 
+        # Get all users pending routes/locations/events with a type column
         cur.execute("""
                 SELECT 'Route' AS type, name, NULL, NULL
                 FROM Route
@@ -1041,7 +1079,7 @@ def account():
                 WHERE account_id = ? AND pending = 1
             """, (user_id, user_id, user_id))
         results = cur.fetchall()
-        
+
         submissions_results = [dict(row) for row in results]
         types = ["Route", "Location", "Event"]
         i = 0
@@ -1051,15 +1089,18 @@ def account():
                 i += 1
 
     if request.method == "POST":
-        action = request.form.get("action") # Gets the action of the form
+        action = request.form.get("action")  # Gets the action of the form
 
+        # Redirects to edit if edit button is pressed
         if action == "edit":
-            return redirect(url_for("edit_account")) # R    edirects to edit if edit button is pressed
+            return redirect(url_for("edit_account"))
 
+        # Logs out and goes to home if logout is pressed
         if action == "logout":
             logout()
-            return redirect(url_for("home")) # Logs out and goes to home if logout is pressed
-    return render_template("account.html", header="Account", routes=routes, events=events, submissions=submissions)
+            return redirect(url_for("home"))
+    return render_template("account.html", header="Account", routes=routes,
+                           events=events, submissions=submissions)
 
 
 def get_logged_routes():
@@ -1080,11 +1121,12 @@ def get_logged_routes():
 
 def get_joined_events():
     con = sqlite3.connect(DB_NAME)
-    con.row_factory = sqlite3.Row # Turns the results into a table for easier access of values
+    con.row_factory = sqlite3.Row  # Results become a dict for easy access
     cur = con.cursor()
-    
+
     # Gets relevant event info and user results 
-    cur.execute("""SELECT e.id, e.name, start_date, end_date, start_time, end_time, ae.placing, ae.time
+    cur.execute("""SELECT e.id, e.name, start_date, end_date,
+                start_time, end_time, ae.placing, ae.time
                 FROM Account_Event ae
                 JOIN Event e ON ae.event_id = e.id
                 WHERE ae.account_id = ?
@@ -1092,26 +1134,27 @@ def get_joined_events():
     results = cur.fetchall()
     con.close()
 
+    # Sets up events dicts adding a concluded key depending on status
     events = [dict(result) for result in results]
     for event in events:
         event["slug"] = slugify(event["name"])
         event["joined"] = True
-        event["concluded"] = event_status(event) == 4 # Will be true or false depending on what event status returns
+        event["concluded"] = event_status(event) == 4
 
         # Adds the placing suffix e.g. 1st, 2nd, 3rd, 4th
         if event["placing"]:
             event["placing"] = placing_suffix(event["placing"])
 
-    events.sort(key=event_status) # Sorts based on the status returned
+    events.sort(key=event_status)  # Sorts based on the status returned
     return events
 
 
 @app.route("/edit_account", methods=["GET", "POST"])
 def edit_account():
     errors = {"username": [],
-                "display_name": [],
-                "profile_picture": []
-                }
+              "display_name": [],
+              "profile_picture": []
+              }
     if request.method == "POST":
         action = request.form.get("action")
 
@@ -1120,26 +1163,26 @@ def edit_account():
             username = request.form.get("username").strip()
             display_name = request.form.get("display_name").strip()
 
-            # Checks if user and display name are correct length, not profanic, and are inputted
+            # Checks user and display name are correct length and not profanic
             if profanity_check(username):
-                errors["username"].append("Username contains inappropriate language.")
+                errors["username"].append("Username not allowed.")
             if not username:
                 errors["username"].append("Username cannot be empty.")
 
-            if len(username) > 20: 
-                errors["username"].append("Username must be under 20 characters long")
-            if len(username) < 3:
-                errors["username"].append("Username must be over 3 characters long")
+            if len(username) > MAX_USERNAME_LENGTH:
+                errors["username"].append("Username too long (max 20 chars).")
+            if len(username) < MIN_USERNAME_LENGTH:
+                errors["username"].append("Username too short (min 3 chars).")
 
             if profanity_check(display_name):
-                errors["display_name"].append("Display name contains inappropriate language.")
+                errors["display_name"].append("Display name not alllowed.")
             if not display_name:
                 display_name = username
 
-            if len(display_name) > 20: 
-                errors["display_name"].append("Display name must be under 20 characters long")
-            if len(display_name) < 3:
-                errors["display_name"].append("Display name must be over 3 characters long")
+            if len(display_name) > MAX_USERNAME_LENGTH:
+                errors["display_name"].append("Display name too long (max 20)")
+            if len(display_name) < MIN_USERNAME_LENGTH:
+                errors["display_name"].append("Display name too short (min 3)")
 
             # If names are error free
             if not any(errors.values()):
@@ -1149,65 +1192,75 @@ def edit_account():
                     # Checks if the profile picture was updated and saves it
                     if profile_picture and profile_picture.filename != "":
                         filename = photos.save(profile_picture)
-                        file_url = url_for("get_file", filename=filename) 
+                        file_url = url_for("get_file", filename=filename)
                     else:
-                        file_url = request.form.get("current_profile") # Set pfp to the current if unchanged
+                        # Sets pfp to the current if unchanged
+                        file_url = request.form.get("current_profile")
 
                     con = sqlite3.connect(DB_NAME)
                     cur = con.cursor()
 
                     # Updates account info
-                    cur.execute("UPDATE Account SET username = ?, display_name = ?, profile_picture = ? WHERE username = ?", 
-                                (username, display_name, file_url, session.get("username")))
+                    cur.execute("""UPDATE Account SET username = ?,
+                                display_name = ?, profile_picture = ?
+                                WHERE username = ?""",
+                                (username, display_name,
+                                 file_url, session.get("username")))
                     con.commit()
                     con.close()
 
                     session["profile_picture"] = file_url
                     session["username"] = username
-                    session["display_name"] = display_name 
+                    session["display_name"] = display_name
 
                     return redirect(url_for("account"))
-                except sqlite3.IntegrityError: # Ensures username is unique
+                except sqlite3.IntegrityError:  # Ensures username is unique
                     errors["username"].append("This username is already taken")
-        else: 
+        else:
             return redirect(url_for("account"))
 
-    return render_template("edit_account.html", header="Account", errors=errors)
+    return render_template("edit_account.html",
+                           header="Account", errors=errors)
 
 
 def profanity_check(text):
-    return any(banned_word in text.lower() for banned_word in BANNED_WORDS) # Returns true if the text contains a banned word
+    # Returns true if the text contains a banned word
+    return any(banned_word in text.lower() for banned_word in BANNED_WORDS)
 
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
     con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
-    
+
     wtf_form = RegisterForm()
 
     if wtf_form.validate_on_submit():
         name = wtf_form.name.data
         password = wtf_form.password.data
         date = request.form.get("local_date")
-        
+
         # Secures password by hashing it to avoid issues
         hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
-        
+
         try:
             # Save profile if provided
-            if wtf_form.photo.data != None:
+            if wtf_form.photo.data is not None:
                 filename = photos.save(wtf_form.photo.data)
-            else: 
+            else:
                 # Guest Profile Picture
                 filename = "magnus.png"
             file_url = url_for("get_file", filename=filename)
 
-            # Adds user to database
-            cur.execute("INSERT INTO Account (username, password, profile_picture, permission_level, display_name, date) VALUES (?, ?, ?, 1, ?, ?)", (name, hashed_password, file_url, name, date))
+            # Adds user to the database
+            cur.execute("""INSERT INTO Account (username, password,
+                        profile_picture, permission_level, display_name, date)
+                        VALUES (?, ?, ?, 1, ?, ?)""",
+                        (name, hashed_password, file_url, name, date))
             con.commit()
 
-            session["user_id"] = cur.lastrowid # Auto logs in so user doesn't have to
+            # Auto logs in so user doesn't have to
+            session["user_id"] = cur.lastrowid
             return redirect(url_for("home"))
         except sqlite3.IntegrityError:
             wtf_form.name.errors.append("That username is already taken")
@@ -1225,14 +1278,15 @@ def get_file(filename):
 def login():
     error = None
 
-    # Verifies login 
+    # Verifies login
     if request.method == "POST":
         username = request.form.get("username")
-        password = request.form.get("password") 
+        password = request.form.get("password")
 
         con = sqlite3.connect(DB_NAME)
         cur = con.cursor()
-        cur.execute("SELECT id, password FROM Account WHERE username = ?;", (username,))
+        cur.execute("""SELECT id, password FROM Account
+                    WHERE username = ?;""", (username,))
         result = cur.fetchone()
 
         # Ensures user is in database
