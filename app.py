@@ -927,7 +927,7 @@ def parse_datetime(date, time):
     hour, minute = map(int, time[:-2].split(":"))  # Gets hours and mins
     ampm = time[-2:]
 
-    # Following if statements convert the hours into 24hr time 
+    # Following if statements convert the hours into 24hr time
     if ampm == "pm" and hour != 12:  # Add 12 hours if its pm and not 12pm
         hour += 12
     if ampm == "am" and hour == 12:  # If it's midnight
@@ -1028,7 +1028,7 @@ def process_submissions():
     con = sqlite3.connect('climbing.db')
     cur = con.cursor()
 
-    id = request.form.get("id") 
+    id = request.form.get("id")
     type = request.form.get("type")  # Used to identify which table to alter
     action = request.form.get("action")  # Either approve or deny
 
@@ -1124,7 +1124,7 @@ def get_joined_events():
     con.row_factory = sqlite3.Row  # Results become a dict for easy access
     cur = con.cursor()
 
-    # Gets relevant event info and user results 
+    # Gets relevant event info and user results
     cur.execute("""SELECT e.id, e.name, start_date, end_date,
                 start_time, end_time, ae.placing, ae.time
                 FROM Account_Event ae
