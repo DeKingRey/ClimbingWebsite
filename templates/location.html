@@ -1,6 +1,10 @@
 {% extends 'layout.html' %}
 {% block content %}
-    <h1>{{info[0][0]}}</h1> <!-- This is the locations name -->
+    <div class="header-container">
+        <h1>{{info[0][0]}}</h1> <!-- This is the locations name -->
+        <button type="submit" name="action" value="edit" class="circle-button fa-solid fa-pencil" 
+                style="position: absolute; top: 35px; right: 300px;"></button>
+    </div>
 
     <div class="divider"></div>
 

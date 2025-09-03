@@ -29,7 +29,9 @@ from config import (
     MIN_LAT, MAX_LAT, MIN_LON, MAX_LON, MIN_RATING_VALUE, MAX_RATING_VALUE,
     MIN_EVENT_NAME_LENGTH, MIN_LOCATION_NAME_LENGTH,
     MIN_DESC_LENGTH, MAX_DESC_LENGTH, MIN_FULL_DESC_LENGTH,
-    MAX_FULL_DESC_LENGTH, MIN_USERNAME_LENGTH, MAX_USERNAME_LENGTH
+    MAX_FULL_DESC_LENGTH, MIN_USERNAME_LENGTH, MAX_USERNAME_LENGTH,
+    MAX_MINS, MAX_SECS, ONGOING_JOINED, ONGOING_NOT_JOINED, UPCOMING_JOINED,
+    UPCOMING_NOT_JOINED, CONCLUDED
 )
 
 load_dotenv()
@@ -444,8 +446,31 @@ def add_location():
     return redirect(url_for("climbing_map"))
 
 
+@app.route("/map/edit-location/<string:name", methods=["GET", "POST"])
+def edit_location(name):
+    id = request.args.get("id")
+    con = sqlite3.connect(DB_NAME)
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+
+    if request.method == "POST":
+        pass
+
+    # Gets the locations info joins setting table to get loc setting
+    cur.execute("""SELECT Location.name, Setting.name, image
+                FROM Location
+                JOIN Setting ON Location.setting_id = Setting.id
+                WHERE Location.id = ?""", id)
+    info = [dict(result[1]) for result in cur.fetchall()]
+
+    return render_template(header="xx", info=info)
+
+
+
+
 @app.route("/log-route", methods=["GET", "POST"])
 def log_route():
+
     current_url = request.form.get("url")
     user_id = session.get("user_id")
     route_id = request.form.get("route_id")
@@ -573,7 +598,10 @@ def event(event_slug):
                     # Ensures time inputs aren't too long or negative
                     mins = int(time_mins)
                     secs = int(time_secs)
-                    if not (0 <= mins <= 100) or not (0 <= secs <= 59):
+                    if (
+                        not (ZERO <= mins <= MAX_MINS) or
+                        not (ZERO <= secs <= MAX_SECS)
+                    ):
                         errors[time_key].append("Time must be a valid input")
                     else:
                         # Forms the time string if both inputs are gotten
@@ -656,7 +684,7 @@ def event(event_slug):
     no_results = False
 
     # If the event is concluded get the result info
-    if status == 4:
+    if status == CONCLUDED:
         results_data = get_results(event_id)
 
         # Prevent error from participantless event
@@ -944,23 +972,24 @@ def event_status(event):
     # Gets the events status
     if start <= now <= end:  # If the event has started but not ended
         if (event["joined"]):
-            return 0  # Ongoing joined
+            return ONGOING_JOINED
         else:
-            return 1  # Ongoing not joined
+            return ONGOING_NOT_JOINED
     elif now < start:
         if (event["joined"]):
-            return 2  # Upcoming joined
+            return UPCOMING_JOINED
         else:
-            return 3  # Upcoming not joined
+            return UPCOMING_NOT_JOINED
     else:
-        return 4  # Concluded
+        return CONCLUDED
 
 
 def sort_events(event):
     # Will sort events status by how soon they are starting/ending
     status = event_status(event)
 
-    if status <= 1 or status == 4:  # Sorts ongoing/concluded by endtime
+    # Sorts ongoing/concluded by endtime
+    if status <= ONGOING_NOT_JOINED or status == CONCLUDED:
         sort_time = parse_datetime(event["end_date"], event["end_time"])
     else:  # Upcoming events are sorted by when they start
         sort_time = parse_datetime(event["start_date"], event["start_time"])
@@ -1139,7 +1168,7 @@ def get_joined_events():
     for event in events:
         event["slug"] = slugify(event["name"])
         event["joined"] = True
-        event["concluded"] = event_status(event) == 4
+        event["concluded"] = event_status(event) == CONCLUDED
 
         # Adds the placing suffix e.g. 1st, 2nd, 3rd, 4th
         if event["placing"]:
