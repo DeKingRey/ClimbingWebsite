@@ -7,14 +7,14 @@
                     <h2>Edit Location Info</h2>
                     <div class="divider"></div>
                 </div>
-                <button type="submit" class="circle-button" name="action" value="close" 
+                <button type="submit" class="circle-button" name="action" value="edit" 
                 style="position: absolute; top: 35px; right: 100px; font-size: 30px;">&times;</button>
             </div>
             
             <!-- Name edit -->
             <div class="form-group" style="width: 40%;">
-                <label for="name"><strong>Name</strong> - {{ name }}</label>
-                <input type="text" name="name" id="name" value="{{ name }}" minlength="3" maxlength="20"> 
+                <label for="name"><strong>Name</strong> - {{ info['name'] }}</label>
+                <input type="text" name="name" id="name" value="{{ info['name'] }}" minlength="3" maxlength="20"> 
                 
                 <!-- Displays the fields potential errors -->
                 {% if errors["name"] != [] %} 
@@ -24,22 +24,21 @@
                 {% endif %}
             </div> 
             
-            <!-- Display name edit -->
-            <div class="form-group" style="width: 40%;">
-                <label for="display_name"><strong>Display Name</strong> - {{ display_name }}</label>
-                <input type="text" name="display_name" id="display_name" value="{{ display_name }}" minlength="3" maxlength="20"> 
-
-                {% if errors["display_name"] != [] %} <!-- Displays the fields potential errors -->
-                    {% for error in errors["display_name"] %}
-                        <div class="form-error">{{ error }}</div>
+            <!-- Edit setting -->
+            <div class="form-group">
+                <label for="setting">Setting</label>
+                <!-- Loops through the settings and creates options for them--> 
+                <select name="setting" id="setting">
+                    {% for setting in settings %}
+                        <option value="{{ setting[0] }}" required>{{setting[1]}}</option >
                     {% endfor %}
-                {% endif %}
+                </select> 
             </div>
 
-            <!-- Profile picture input edit -->
+            <!-- Image input edit -->
             <div class="form-group" style="width: 40%">
-                <label for="image"><strong>Profile Picture</strong>
-                    <img src="{{ profile_picture }}" alt="profile picture" class="photo-preview profile-preview" style="margin: 20px 0; display: block;" id="photo-preview"> <!-- Will display the current set profile picture -->
+                <label for="image"><strong>Image</strong>
+                    <img src="{{ info['image'] }}" alt="location image" class="photo-preview profile-preview" style="margin: 20px 0; display: block;" id="photo-preview"> <!-- Will display the current set profile picture -->
                 </label>
                 <label for="image" class="button">Change Profile Picture</label>
 
@@ -51,6 +50,18 @@
                         <div class="form-error">{{ error }}</div>
                     {% endfor %}
                 {% endif %}
+            </div>
+
+            <div class="form-group">
+                <!-- Will display the current set profile picture -->
+                <label for="image"><strong>Edit Image</strong>
+                    <img src="{{ info['image'] }}" alt="location image" class="photo-preview profile-preview" id="photo-preview">
+                </label>
+                <input type="file" id="image" name="image" accept="image/*" style="display: none;">
+
+                <img src="#" alt="Image Preview" id="photo-preview" class="photo-preview location-preview">
+
+                <div class="form-error loc-image-errors" style="display: none;"></div> <!-- Div which will display image errors -->
             </div>
 
             <div class="form-group" style="width: 60%;">

@@ -214,7 +214,7 @@ def get_settings():
     return results
 
 
-@app.route("/map/<string:name>")
+@app.route("/map/<string:name>", methods=["GET", "POST"])
 def map_location(name):
     id = request.args.get("id")
     types = get_route_types()
@@ -253,6 +253,12 @@ def map_location(name):
             route_id = result[1]
             route_name = result[2]
             info[1][route_id] = [route_name, slugify(route_name)]
+
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "edit":
+            return redirect(url_for("edit_location", name=name, location_id=id))
 
     return render_template("location.html", header="Map", info=info,
                            types=types, climb_routes=routes)
@@ -446,31 +452,71 @@ def add_location():
     return redirect(url_for("climbing_map"))
 
 
-@app.route("/map/edit-location/<string:name", methods=["GET", "POST"])
+@app.route("/map/edit-location/<string:name>", methods=["GET", "POST"])
 def edit_location(name):
-    id = request.args.get("id")
+    location_id = request.args.get("id")
     con = sqlite3.connect(DB_NAME)
     con.row_factory = sqlite3.Row
     cur = con.cursor()
 
     if request.method == "POST":
-        pass
+        name = request.form.get("name")
+        setting_id = request.form.get("setting")
+        image_file = request.files.get("image")
+
+        has_errors = False
+
+        # Validates name field, making sure its not null or too big
+        if len(name) <= ZERO or len(name) > MAX_NAME_LENGTH:
+            has_errors = True
+
+        # Validates that the setting id is a digit
+        if setting_id.isdigit():
+            cur.execute("SELECT id FROM Setting;")
+            setting_ids = [row[0] for row in cur.fetchall()]
+            # Validates that the setting id is a valid id
+            if int(setting_id) not in setting_ids:
+                has_errors = True
+
+        # Validates image input
+        if not image_file or image_file.filename.strip() == "":
+            has_errors = True
+        elif not has_errors:
+            try:
+                # Attempts to save the filename
+                saved_filename = photos.save(image_file)
+                file_url = url_for("get_file", filename=saved_filename)
+            except UploadNotAllowed:
+                has_errors = True
+
+        # Updates location info if no errors are present
+        if not has_errors:
+            cur.execute("""UPDATE Location SET name = ?,
+                        setting_id = ?, image = ?
+                        WHERE id = ?""",
+                        (name, setting_id,
+                         file_url, location_id))
+            con.commit()
+            con.close()
+
+            flash("Your edited location is now pending approval", "info")
+            return redirect(f"map/{name}?id={location_id}")
+        else:
+            flash("Invalid Form Submission", "error")
 
     # Gets the locations info joins setting table to get loc setting
     cur.execute("""SELECT Location.name, Setting.name, image
                 FROM Location
                 JOIN Setting ON Location.setting_id = Setting.id
-                WHERE Location.id = ?""", id)
+                WHERE Location.id = ?""", location_id)
     info = [dict(result[1]) for result in cur.fetchall()]
 
-    return render_template(header="xx", info=info)
-
-
+    return render_template("edit_location.html", header="Map",
+                           info=info, errors={})# Remove errors after testing 
 
 
 @app.route("/log-route", methods=["GET", "POST"])
 def log_route():
-
     current_url = request.form.get("url")
     user_id = session.get("user_id")
     route_id = request.form.get("route_id")
