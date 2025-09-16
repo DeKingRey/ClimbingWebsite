@@ -4,7 +4,7 @@
         <h1>{{info[0][0]}}</h1> <!-- This is the locations name -->
         <button type="submit" name="action" value="edit" class="circle-button fa-solid fa-pencil" 
                 style="position: absolute; top: 35px; right: 300px;"
-                onclick="window.location.href='/map/slug?id=id'"></button>
+                onclick="window.location.href='/map/edit-location/{{ info[0][1] }}?id={{ request.args.get('id') }}'"></button>
     </div>
 
     <div class="divider"></div>
@@ -31,18 +31,20 @@
         </div>
     </div>
     
+    <!-- Will allow user to add a route if they are logged in -->
     {% if username %}
-        <button data-popup-target="route-popup" class="button">Add Route</button> <!-- This button has a custom data field which is used by JS to know what popup it is trying to access-->
+        <button data-popup-target="route-popup" class="button">Add Route</button> 
     {% else %}
-        <button class="button" onclick="location.href='/login'">Log in to Add a Route</button> <!-- Redirects to the login page if they are not logged in -->
+        <button class="button" onclick="location.href='/login'">Log in to Add a Route</button>
     {% endif %}
 
     <!-- Add route popup form -->
-    <div class="popup" id="route-popup"> <!-- Popup Div-->
-        <div class="popup-inner"> <!-- Popup Content -->
+    <div class="popup" id="route-popup">
+        <div class="popup-inner">
             <button data-popup-close class="close-button">&times;</button>
             <h2>Add Route</h2>
-            <form id="add_route_form" action="{{ url_for('add_route') }}" method="POST"> <!-- This is the form to add a route, with the route name, grade, amount of bolts, location, and types. -->
+            <!-- Add route form -->
+            <form id="add_route_form" action="{{ url_for('add_route') }}" method="POST">
                 
                 <div class="form-group">
                     <label for="name">Route Name</label>
@@ -74,10 +76,11 @@
                     <div class="dropdown">
                         <button type="button" class="button">Select Types</button>
                         <div class="dropdown-content">
+                            <!-- Loops through each type and adds them to the dropdown -->
                             {% for type in types %}
                                 <label><input type="checkbox" name="types[]" value="{{type[0]}}">{{type[1]}}</label>
                             {% endfor %}
-                        </div> <!-- Types goes through all given types and adds them to the multiselect dropdown. -->
+                        </div>
                     </div>
 
                     <div class="form-error types-errors" style="display: none;"></div> <!-- Div which will display types errors -->
@@ -139,7 +142,7 @@
                 errorDiv.textContent = "";
                 return true;
             }
-            const isValid = /^\d+$/.test(value); // Dumbest operator(?) I've ever seen, the regex, checks if the value is numeric, has at least the digits 0-9 so isn't negative, nor a float
+            const isValid = /^\d+$/.test(value);t
             errorDiv.textContent = isValid ? "" : "Bolts must be a non-negative integer";
             errorDiv.style.display = isValid ? "none" : "block";
             boltsInput.classList.toggle("invalid", !isValid);
@@ -147,9 +150,9 @@
         }
 
         function validateTypes() {
-            const checked = [...typesInput].filter(box => box.checked) // The ... separates values into individual elements(spread operator), gets all the checked boxes
+            const checked = [...typesInput].filter(box => box.checked) // Separates inputs individually
             const errorDiv = document.querySelector(".types-errors");
-            errorDiv.textContent = checked.length ? "" : "Select at least one type"; // Checks that checked is not empty(ensures one thing is checked)
+            errorDiv.textContent = checked.length ? "" : "Select at least one type"; // Checks that checked is not empty
             errorDiv.style.display = checked.length ? "none" : "block";
             return checked.length > 0;  
         }

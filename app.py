@@ -258,7 +258,8 @@ def map_location(name):
         action = request.form.get("action")
 
         if action == "edit":
-            return redirect(url_for("edit_location", name=name, location_id=id))
+            return redirect(url_for("edit_location", name=name,
+                                    location_id=id))
 
     return render_template("location.html", header="Map", info=info,
                            types=types, climb_routes=routes)
@@ -459,15 +460,24 @@ def edit_location(name):
     con.row_factory = sqlite3.Row
     cur = con.cursor()
 
+    cur.execute("SELECT id FROM Location;")
+    valid_ids = [result[0] for result in cur.fetchall()]
+
+    # Aborts if id is null, isn't a valid int, or is not a valid id
+    if not location_id or not location_id.isdigit():
+        abort(404)
+    elif int(location_id) not in valid_ids:
+        abort(404)
+
     if request.method == "POST":
-        name = request.form.get("name")
+        name_field = request.form.get("name")
         setting_id = request.form.get("setting")
         image_file = request.files.get("image")
 
         has_errors = False
 
         # Validates name field, making sure its not null or too big
-        if len(name) <= ZERO or len(name) > MAX_NAME_LENGTH:
+        if len(name_field) <= ZERO or len(name_field) > MAX_NAME_LENGTH:
             has_errors = True
 
         # Validates that the setting id is a digit
@@ -494,25 +504,28 @@ def edit_location(name):
             cur.execute("""UPDATE Location SET name = ?,
                         setting_id = ?, image = ?
                         WHERE id = ?""",
-                        (name, setting_id,
+                        (name_field, setting_id,
                          file_url, location_id))
             con.commit()
             con.close()
 
             flash("Your edited location is now pending approval", "info")
-            return redirect(f"map/{name}?id={location_id}")
+            return redirect(url_for("map_location",
+                                    name=slugify(name_field),
+                                    id=location_id))
         else:
             flash("Invalid Form Submission", "error")
 
     # Gets the locations info joins setting table to get loc setting
-    cur.execute("""SELECT Location.name, Setting.name, image
+    cur.execute("""SELECT Location.name, Setting.name as setting, image
                 FROM Location
                 JOIN Setting ON Location.setting_id = Setting.id
-                WHERE Location.id = ?""", location_id)
-    info = [dict(result[1]) for result in cur.fetchall()]
+                WHERE Location.id = ?""", (location_id,))
+    info = dict(cur.fetchone())
+    settings = get_settings()
 
     return render_template("edit_location.html", header="Map",
-                           info=info, errors={})# Remove errors after testing 
+                           info=info, settings=settings)
 
 
 @app.route("/log-route", methods=["GET", "POST"])
