@@ -524,7 +524,8 @@ def edit_location(name):
     info = dict(cur.fetchone())
     settings = get_settings()
 
-    return render_template("edit_location.html", header="Map",
+    # Returns 404 for now until I complete the feature
+    return render_template("404.html", header="404",
                            info=info, settings=settings)
 
 

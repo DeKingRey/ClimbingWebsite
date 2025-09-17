@@ -2,13 +2,13 @@
 {% block content %}
     {% if username %}
         <form action="/edit_account" method="POST" enctype="multipart/form-data" class="center-form">
-            <div class="account-info-container">
+            <div class="account-info-container" style="position: relative;">
                 <div class="left-align" style="text-align: left; display: inline-block;">
+                    <button type="submit" class="circle-button" name="action" value="close" 
+                        style="font-size: 30px; position: absolute; top: 15px; right: 10px;">&times;</button>
                     <h2>Edit Account Info</h2>
                     <div class="divider"></div>
                 </div>
-                <button type="submit" class="circle-button" name="action" value="close" 
-                style="position: absolute; top: 35px; right: 100px; font-size: 30px;">&times;</button>
             </div>
             
             <!-- Username edit -->

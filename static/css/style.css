@@ -50,12 +50,13 @@ h1 {
     margin-bottom: 10px;
 }
 
+/* Styles the headings*/
 h2 {
     font-size: 2.5rem;
     font-weight: 600;
     color: var(--color-charcoal);
     margin-bottom: 10px;
-} /* Styles the headings*/
+}
 
 h4 {
     font-size: 2rem;
@@ -116,6 +117,14 @@ footer {
     border-radius: 20px;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
+
+/* Terminology Lists are centered */
+.terminology-list
+{
+    line-height: 2;
+    text-align: center;
+}
+
 /*#endregion*/
 
 

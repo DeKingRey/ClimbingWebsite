@@ -1,5 +1,44 @@
 {% extends 'layout.html' %}
 {% block content %}
-    <h2>Info</h2>
+    <h2 style="text-align: center;">Info</h2>
+    <div class="divider"></div>
     <p>This website contains many helpful tools for climbers to use as an aid to their climbing. You can use the map to see locations and their routes, you can also log routes you have completed, and join/create climbing related events.</p>
+
+    <h2 style="text-align: center;">Terminology</h2>
+    <div class="divider"></div>
+
+    <div class="terminology-group" style="display: flex; justify-content: center;">
+        <ul class="terminology-list">
+            <h4 style="margin-bottom: 0;">Key Groups</h4>
+            <div class="divider"></div>
+            <li><strong>Location</strong> - A place with routes, like a gym or crag.</li>
+            <li><strong>Route</strong> - A specific climb</li>
+            <li><strong>Event</strong> - A scheduled climbing competition or activity.</li>
+
+        </ul>
+
+        <ul class="terminology-list">
+            <h4 style="margin-bottom: 0;">Location Settings</h4>
+            <div class="divider"></div>
+            <li><strong>Gym</strong> - An indoor climbing location that uses man-made climbing holds.</li>
+            <li><strong>Crag</strong> - An outdoor climbing location that utilises cliff or rock faces.</li>
+        </ul>
+
+        <ul class="terminology-list">
+            <h4 style="margin-bottom: 0;">Route Types</h4>
+            <div class="divider"></div>
+            <li><strong>Top Rope</strong> - Climbing with a rope anchored at the top.</li>
+            <li><strong>Lead</strong> - Climbing while clipping the rope into the wall as you go.</li>
+            <li><strong>Boulder</strong> - Short, ropless climbs over crash pads.</li>
+            <li><strong>Alpine</strong> - Climbing in high-mountain terrain.</li>
+        </ul>
+
+        <ul class="terminology-list">
+            <h4 style="margin-bottom: 0;">Route Details</h4>
+            <div class="divider"></div>
+            <li><strong>Grade</strong> - A climb's difficulty rating, there are many different grading systems.</li>
+            <li><strong>Bolts</strong> - Fixed anchors into the wall used in lead climbing to clip your rope in.</li>
+        </ul>
+    </div>
+
 {% endblock %}
