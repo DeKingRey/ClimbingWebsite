@@ -13,14 +13,15 @@
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required>
         </div>
+
+        <!-- If they fail it will display what went wrong. -->
+        {% if error %}
+            <div class="form-error" style="width: 20%; margin-left: 0; font-size: 1.25rem; padding: 5px 5px;"><p>{{ error }}</p></div>
+        {% endif %}
         
         <div class="form-group" style="width: 60%">
             <button type="submit" class="button submit-button">Login</button>
         </div>
     </form> <!-- Creates a log in form, with the username and password. -->
-
-    {% if error %}
-        <div class="form-error" style="width: 20%; margin-left: 0; font-size: 1.25rem; padding: 5px 5px;"><p>{{ error }}</p></div>
-    {% endif %} <!-- If they fail it will display what went wrong. -->
 
 {% endblock %}

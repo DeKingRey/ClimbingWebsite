@@ -1,12 +1,12 @@
 {% extends 'layout.html' %}
 {% block content %}
     {% if username %}
-        <form action="{{ url_for('edit_location', name={{ info['name'] }}), id={{ request.args.get('id') }} }}"
-                method="POST" enctype="multipart/form-data" class="center-form">
+        <form action="{{ url_for('edit_location', name=info['name'], id=request.args.get('id')) }}"
+                method="POST" enctype="multipart/form-data" class="center-form" id="edit_loc_form">
             <div class="account-info-container" style="position: relative;">
                 <div class="left-align" style="text-align: left; display: inline-block;">
                     <button type="submit" class="circle-button" name="action" value="edit" 
-                        style=" font-size: 30px;">&times;</button>
+                        style=" font-size: 30px; position: absolute; top: 15px; right: 10px;">&times;</button>
                     <h2>Edit Location Info</h2>
                     <div class="divider"></div>
                 </div>
@@ -39,8 +39,8 @@
                 </label>
                 <label for="image" class="button">Change Profile Picture</label>
 
-                <input type="hidden" name="current_profile" value="{{ profile_picture }}"> <!-- Sets the default profile picture-->
-                <input type="file" id="image" name="image" accept="image/*" style="display: none;">
+                <input type="hidden" name="current_image" value="{{ info['image'] }}"> <!-- Sets the default profile picture-->
+                <input type="file" id="image" name="image" accept="image/*" style="display: none;" value="{{ info['image'] }}">
 
                 <div class="form-error loc-image-errors" style="display: none;"></div> <!-- Div which will display image errors -->
             </div>
@@ -53,5 +53,68 @@
     {% else %}
         <h3>You are not logged in. <a href="/login">Log in here</a> Or <a href="/register">Register here</a>  if you don't have an account.</h3>     <!-- Otherwise provides the login and register pages. -->
     {% endif %}
+
+    <script>
+        const locForm = document.getElementById("edit_loc_form");
+
+        // Gets all the input fields
+        const locNameInput = locForm.elements.namedItem("name");
+        const locImageInput = locForm.image;
+
+        function validateLocName() {
+            const value = locNameInput.value.trim(); 
+            const errorDiv = document.querySelector(".loc-name-errors");
+
+            // Validates whether input field is empty
+            if (!value) { 
+                errorDiv.textContent = "Location name required";
+                errorDiv.style.display = "block"; 
+                locNameInput.classList.add("invalid");
+
+                return false;
+            }
+            // Validates that the length of the name isn't too long
+            else if (value.length > 100) {
+                errorDiv.textContent = "Location name must be less than 100 characters";
+                errorDiv.style.display = "block"; 
+                locNameInput.classList.add("invalid");
+
+                return false;
+            }
+
+            errorDiv.textContent = "";
+            errorDiv.style.display = "none";
+            locNameInput.classList.toggle("invalid", false);
+            return true;
+        }
+
+        function validateImage() {
+            const value = locImageInput.value.trim(); 
+            const errorDiv = document.querySelector(".loc-image-errors"); 
+
+            errorDiv.textContent = "";
+            errorDiv.style.display = "none";
+            locImageInput.classList.remove("invalid");
+            return true;
+        }
+
+        // Adds event listeners to all input fields, waiting for input
+        locNameInput.addEventListener("input", validateLocName);
+        locImageInput.addEventListener("input", validateImage);
+
+
+        // Adds event listener to submit button
+        locForm.addEventListener("submit", function(e) {
+            // Checks validators
+            const valid = 
+                validateLocName() &&
+                validateImage();
+
+            // If any come back false it will prevent submission
+            if (!valid) {
+                e.preventDefault();
+            }
+        });
+    </script>
 
 {% endblock %}

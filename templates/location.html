@@ -107,19 +107,30 @@
         const typesInput = form.querySelectorAll("input[name='types[]']") // Selects all type inputs(checkboxes)
 
         function validateName() {
-            const value = nameInput.value.trim(); // Gets name value
-            const errorDiv = document.querySelector(".name-errors"); // Gets the name errors div
+            const value = nameInput.value.trim(); 
+            const errorDiv = document.querySelector(".name-errors");
 
-            if (!value) { // If value field is empty
-                errorDiv.textContent = "Route name required"; // Checks if value is empty(false), if not error div is empty
-                errorDiv.style.display = "block"; // Div becomes visible
+            // Validates whether input field is empty
+            if (!value) { 
+                errorDiv.textContent = "Route name required";
+                errorDiv.style.display = "block"; 
                 nameInput.classList.add("invalid");
 
                 return false;
             }
 
+            // Validates that the length of the name isn't too long
+            if (value.length > 100) {
+                errorDiv.textContent = "Route name must be less than 100 characters";
+                errorDiv.style.display = "block"; 
+                nameInput.classList.add("invalid");
+
+                return false;
+            }
+
+            // Validates whether the route already exists
             const exists = routes.includes(value);
-            const isValid = !exists; // Valid if the route does not exist
+            const isValid = !exists; 
             errorDiv.textContent = isValid ? "" : "Route already exists";
             errorDiv.style.display = isValid ? "none" : "block";
             nameInput.classList.toggle("invalid", !isValid);
@@ -129,6 +140,16 @@
         function validateGrade() {
             const value = gradeInput.value.trim();
             const errorDiv = document.querySelector(".grade-errors");
+
+            // Validates that the length of the grade isn't too long
+            if (value.length > 10) {
+                errorDiv.textContent = "Grade must be less than 10 characters";
+                errorDiv.style.display = "block"; 
+                gradeInput.classList.add("invalid");
+
+                return false;
+            }
+
             errorDiv.textContent = value ? "" : "Grade is required";
             errorDiv.style.display = value ? "none" : "block";
             gradeInput.classList.toggle("invalid", !value);
@@ -138,11 +159,24 @@
         function validateBolts() {
             const value = boltsInput.value.trim();
             const errorDiv = document.querySelector(".bolts-errors");
-            if (value === "") { // If the value is empty then it returns true(bolts may be empty)
+            // Bolts are optional
+            if (value === "") { 
                 errorDiv.textContent = "";
+                errorDiv.style.display = "none";
+                boltsInput.classList.toggle("invalid", false);
                 return true;
             }
-            const isValid = /^\d+$/.test(value);t
+            
+            // Ensures bolts value isn't too high
+            if (value > 1000) {
+                errorDiv.textContent = "Bolts must be less than 1000"
+                errorDiv.style.display = "block";
+                boltsInput.classList.toggle("invalid", true);
+                return false;
+            }
+
+            // Ensures bolts if a valid number
+            const isValid = /^\d+$/.test(value); 
             errorDiv.textContent = isValid ? "" : "Bolts must be a non-negative integer";
             errorDiv.style.display = isValid ? "none" : "block";
             boltsInput.classList.toggle("invalid", !isValid);
@@ -150,9 +184,9 @@
         }
 
         function validateTypes() {
-            const checked = [...typesInput].filter(box => box.checked) // Separates inputs individually
+            const checked = [...typesInput].filter(box => box.checked) // The ... separates values into individual elements(spread operator), gets all the checked boxes
             const errorDiv = document.querySelector(".types-errors");
-            errorDiv.textContent = checked.length ? "" : "Select at least one type"; // Checks that checked is not empty
+            errorDiv.textContent = checked.length ? "" : "Select at least one type"; // Checks that checked is not empty(ensures one thing is checked)
             errorDiv.style.display = checked.length ? "none" : "block";
             return checked.length > 0;  
         }

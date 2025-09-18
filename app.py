@@ -310,6 +310,8 @@ def add_route():
     types = request.form.getlist("types[]")
     has_errors = False
 
+    print("Add Route")
+
     current_url = request.form.get("url")
     con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
@@ -324,7 +326,7 @@ def add_route():
         has_errors = True
     else:
         # Ensures it is an original route name
-        cur.execute("SELECT name FROM Route;")
+        cur.execute("SELECT name FROM Route WHERE pending = 0;")
         route_names = [row[0] for row in cur.fetchall()]
         if values[0] in route_names:
             has_errors = True
@@ -470,51 +472,58 @@ def edit_location(name):
         abort(404)
 
     if request.method == "POST":
-        name_field = request.form.get("name")
-        setting_id = request.form.get("setting")
-        image_file = request.files.get("image")
+        action = request.form.get("action")
 
-        has_errors = False
+        # Will prevent other buttons causing edits
+        if action == "apply":
+            name_field = request.form.get("name")
+            setting_id = request.form.get("setting")
+            image_file = request.files.get("image")
+            if not image_file:
+                image_file = request.files.get("current_image")
 
-        # Validates name field, making sure its not null or too big
-        if len(name_field) <= ZERO or len(name_field) > MAX_NAME_LENGTH:
-            has_errors = True
+            has_errors = False
 
-        # Validates that the setting id is a digit
-        if setting_id.isdigit():
-            cur.execute("SELECT id FROM Setting;")
-            setting_ids = [row[0] for row in cur.fetchall()]
-            # Validates that the setting id is a valid id
-            if int(setting_id) not in setting_ids:
+            # Validates name field, making sure its not null or too big
+            if len(name_field) <= ZERO or len(name_field) > MAX_NAME_LENGTH:
                 has_errors = True
 
-        # Validates image input
-        if not image_file or image_file.filename.strip() == "":
-            has_errors = True
-        elif not has_errors:
-            try:
-                # Attempts to save the filename
-                saved_filename = photos.save(image_file)
-                file_url = url_for("get_file", filename=saved_filename)
-            except UploadNotAllowed:
-                has_errors = True
+            # Validates that the setting id is a digit
+            if setting_id.isdigit():
+                cur.execute("SELECT id FROM Setting;")
+                setting_ids = [row[0] for row in cur.fetchall()]
+                # Validates that the setting id is a valid id
+                if int(setting_id) not in setting_ids:
+                    has_errors = True
 
-        # Updates location info if no errors are present
-        if not has_errors:
-            cur.execute("""UPDATE Location SET name = ?,
-                        setting_id = ?, image = ?
-                        WHERE id = ?""",
-                        (name_field, setting_id,
-                         file_url, location_id))
-            con.commit()
-            con.close()
+            # Validates image input
+            if image_file and image_file.filename.strip():
+                try:
+                    # Attempts to save the filename
+                    saved_filename = photos.save(image_file)
+                    file_url = url_for("get_file", filename=saved_filename)
+                except UploadNotAllowed:
+                    has_errors = True
+            else:
+                # Uses current profile picture if no image is provided
+                file_url = request.form.get("current_image")
 
-            flash("Your edited location is now pending approval", "info")
-            return redirect(url_for("map_location",
-                                    name=slugify(name_field),
-                                    id=location_id))
-        else:
-            flash("Invalid Form Submission", "error")
+            # Updates location info if no errors are present
+            if not has_errors:
+                cur.execute("""UPDATE Location SET name = ?,
+                            setting_id = ?, image = ?
+                            WHERE id = ?""",
+                            (name_field, setting_id,
+                                file_url, location_id))
+                con.commit()
+                con.close()
+
+                flash("Your edited location is now pending approval", "info")
+                return redirect(url_for("map_location",
+                                        name=slugify(name_field),
+                                        id=location_id))
+            else:
+                flash("Invalid Form Submission", "error")
 
     # Gets the locations info joins setting table to get loc setting
     cur.execute("""SELECT Location.name, Setting.name as setting, image
@@ -524,8 +533,7 @@ def edit_location(name):
     info = dict(cur.fetchone())
     settings = get_settings()
 
-    # Returns 404 for now until I complete the feature
-    return render_template("404.html", header="404",
+    return render_template("edit_location.html", header="Map",
                            info=info, settings=settings)
 
 
@@ -1073,6 +1081,9 @@ def placing_suffix(placing):
 
 @app.route("/admin")
 def admin():
+    if session["permission_level"] <= 1:
+        abort(404)
+
     con = sqlite3.connect(DB_NAME)
     cur = con.cursor()
 
@@ -1136,7 +1147,7 @@ def process_submissions():
     con.commit()
     con.close()
 
-    return redirect(url_for('admin'))
+    return redirect(url_for("admin"))
 
 
 @app.route("/account", methods=["GET", "POST"])

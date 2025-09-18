@@ -46,7 +46,7 @@ function validateGrade() {
     if (value.length > 10) {
         errorDiv.textContent = "Grade must be less than 10 characters";
         errorDiv.style.display = "block"; 
-        gradeInput.classList.add("in    valid");
+        gradeInput.classList.add("invalid");
 
         return false;
     }
@@ -63,6 +63,8 @@ function validateBolts() {
     // Bolts are optional
     if (value === "") { 
         errorDiv.textContent = "";
+        errorDiv.style.display = "none";
+        boltsInput.classList.toggle("invalid", false);
         return true;
     }
     
@@ -86,7 +88,8 @@ function validateLocation() {
     const value = locationInput.value.trim();
     const errorDiv = document.querySelector(".location-errors");
 
-    if (!value) { // If value is empty  
+    // If value is empty  
+    if (!value) { 
         errorDiv.textContent = "Location is required";
         errorDiv.style.display = "block"
         locationInput.classList.add("invalid");
@@ -101,9 +104,9 @@ function validateLocation() {
 }
 
 function validateTypes() {
-    const checked = [...typesInput].filter(box => box.checked) // The ... separates values into individual elements(spread operator), gets all the checked boxes
+    const checked = [...typesInput].filter(box => box.checked) // Separates types into array elements
     const errorDiv = document.querySelector(".types-errors");
-    errorDiv.textContent = checked.length ? "" : "Select at least one type"; // Checks that checked is not empty(ensures one thing is checked)
+    errorDiv.textContent = checked.length ? "" : "Select at least one type"; // Ensures at least one thing is checked
     errorDiv.style.display = checked.length ? "none" : "block";
     return checked.length > 0;  
 }
@@ -129,6 +132,7 @@ form.addEventListener("submit", function(e) {
     // If any come back false it will prevent submission, and reopen route popup
     if (!valid) {
         e.preventDefault();
+        console.log("prevent default");
         document.getElementById("route-popup").classList.add("open");
     }
 });
